@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "32193446763",
+    "project_id": "android-studio-40230",
+    "storage_bucket": "android-studio-40230.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:32193446763:android:6d0df53e894298558d822e",
+        "android_client_info": {
+          "package_name": "com.yalig.snapstudy"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "32193446763-n2kt8ssa65kdmtv5uaabr5et0gh1jkkp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.yalig.snapstudy",
+            "certificate_hash": "ca28725c57ab961d383ced03b7aa8ac3d8732864"
+          }
+        },
+        {
+          "client_id": "32193446763-8v30jhv8h0plj9iffjcmt53rthf6f5he.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBxRv2jFt0fid8Q8qfWY93GlfOdYEish7Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "32193446763-8v30jhv8h0plj9iffjcmt53rthf6f5he.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

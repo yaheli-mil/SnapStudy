@@ -1,0 +1,32 @@
+<resources>
+    <string name="app_name">SnapStudy</string>
+    <string name="welcome_back">ברוך שובך! אנא התחבר כדי להמשיך.</string>
+    <string name="email_label">כתובת אימייל</string>
+    <string name="email_hint">name@example.com</string>
+    <string name="password_label">סיסמה</string>
+    <string name="password_hint">••••••••</string>
+    <string name="forgot_password">שכחת סיסמה?</string>
+    <string name="remember_me">זכור מכשיר זה</string>
+    <string name="login_btn">התחברות</string>
+    <string name="or_continue_with">או המשך באמצעות</string>
+    <string name="no_account">אין לך חשבון?</string>
+    <string name="sign_up">הרשם עכשיו</string>
+
+    <!-- Dashboard -->
+    <string name="greeting_user">שלום 👋</string>
+    <string name="search_hint">חיפוש ערכות לימוד, סיכומים…</string>
+    <string name="recent_study_sets">ערכות לימוד אחרונות</string>
+    <string name="view_all">צפה בהכל</string>
+    <string name="subject_biology">ביולוגיה של התא וגנטיקה</string>
+    <string name="subject_economics">מבוא למאקרו-כלכלה</string>
+    <string name="subject_algebra">אלגברה לינארית: מרחבים וקטוריים</string>
+    <string name="new_set_btn">✨ יצירת ערכה חדשה</string>
+    <string name="scan_doc_btn">סריקת סיכום או מסמך</string>
+
+    <!-- Bottom Nav -->
+    <string name="nav_home">ראשי</string>
+    <string name="nav_cards">תרגול</string>
+    <string name="nav_scanner">סורק</string>
+    <string name="nav_settings">פרופיל</string>
+    <string name="tip_empty_state">טיפ מהיר: האפליקציה תסכם עבורך דפי מחברת ותייצר כרטיסיות חזרה באופן אוטומטי!</string>
+</resources>

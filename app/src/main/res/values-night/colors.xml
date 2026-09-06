@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- SnapStudy Design System Colors (True Neutral Dark Mode) -->
+    <color name="primary">#3B82F6</color>
+    <color name="primary_container">#1D4ED8</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="on_primary_container">#DBEAFE</color>
+
+    <color name="secondary">#60A5FA</color>
+    <color name="secondary_container">#242426</color>
+    <color name="on_secondary">#FFFFFF</color>
+
+    <color name="tertiary">#34D399</color>
+    <color name="tertiary_container">#064E3B</color>
+
+    <!-- Canvas and Card Surfaces: Pure / Neutral Dark (NO blue tint) -->
+    <color name="background">#121212</color>
+    <color name="surface">#121212</color>
+    <color name="surface_dim">#0D0D0D</color>
+    <color name="surface_variant">#222222</color>
+    <color name="surface_container">#181818</color>
+    <color name="surface_container_high">#2E2E2E</color>
+    <color name="surface_container_low">#141414</color>
+    <color name="surface_container_lowest">#1E1E1E</color>
+
+    <!-- High-Contrast Clean Typography -->
+    <color name="on_surface">#FFFFFF</color>
+    <color name="on_surface_variant">#A1A1AA</color>
+    <color name="outline">#71717A</color>
+    <color name="outline_variant">#2E2E2E</color>
+
+    <color name="error">#EF4444</color>
+    <color name="error_container">#3D1212</color>
+
+    <!-- Accent / Tag Colors for Subjects (Dark Mode) -->
+    <color name="tag_biology">#1A2530</color>
+    <color name="tag_biology_text">#38BDF8</color>
+    <color name="tag_economics">#2C2010</color>
+    <color name="tag_economics_text">#FBBF24</color>
+    <color name="tag_algebra">#281830</color>
+    <color name="tag_algebra_text">#C084FC</color>
+
+    <!-- Palette (Dark Mode - Neutral Charcoal & Vibrant Accents) -->
+    <color name="brand_blue">#3B82F6</color>
+    <color name="brand_blue_dark">#2563EB</color>
+    <color name="slate_900">#FFFFFF</color>
+    <color name="slate_800">#F4F4F5</color>
+    <color name="slate_700">#E4E4E7</color>
+    <color name="slate_600">#A1A1AA</color>
+    <color name="slate_500">#A1A1AA</color>
+    <color name="slate_400">#71717A</color>
+    <color name="slate_200">#2E2E2E</color>
+    <color name="slate_100">#282828</color>
+    <color name="slate_50">#262626</color>
+    <color name="emerald_600">#34D399</color>
+    <color name="emerald_100">#132E24</color>
+    <color name="indigo_900">#F4F4F5</color>
+    <color name="indigo_100">#333333</color>
+    <color name="indigo_50">#242424</color>
+    <color name="streak_fire">#F59E0B</color>
+
+    <!-- Neutral Dark Cards & Components -->
+    <color name="metric_card_bg">#1E1E1E</color>
+    <color name="metric_card_border">#2E2E2E</color>
+    <color name="book_box_bg">#282828</color>
+
+    <!-- Semantic components -->
+    <color name="logo_text_color">#FFFFFF</color>
+    <color name="metric_icon_blue_bg">#252528</color>
+    <color name="metric_icon_blue_tint">#3B82F6</color>
+    <color name="metric_icon_green_bg">#1E2822</color>
+    <color name="metric_icon_green_tint">#34D399</color>
+    <color name="streak_pill_bg">#2A2215</color>
+    <color name="streak_pill_border">#48381C</color>
+</resources>

@@ -1,0 +1,77 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users/{userId}
+    // Fields:
+    //   - streakDays: number (>= 0)
+    //   - cardsStudiedToday: number (>= 0)
+    //   - dailyGoal: number (>= 0)
+    //   - focusMinutes: number (>= 0)
+    //   - displayName: string (optional, <= 100)
+    //   - email: string (optional, <= 100)
+    //
+    // Subcollection: users/{userId}/study_sets/{setId}
+    // Fields:
+    //   - id: string (<= 100)
+    //   - title: string (1..200 chars)
+    //   - category: string (0..100 chars)
+    //   - updatedInfo: string (0..100 chars)
+    //   - masteryPercentage: number (0..100)
+    //   - flashcards: list of map cards (<= 500 items)
+    //
+    // ===============================================================
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidUserData(data) {
+      return data.keys().hasOnly(['streakDays', 'cardsStudiedToday', 'dailyGoal', 'focusMinutes', 'displayName', 'email', 'updatedAt']) &&
+             (!('streakDays' in data) || (data.streakDays is number && data.streakDays >= 0)) &&
+             (!('cardsStudiedToday' in data) || (data.cardsStudiedToday is number && data.cardsStudiedToday >= 0)) &&
+             (!('dailyGoal' in data) || (data.dailyGoal is number && data.dailyGoal >= 0)) &&
+             (!('focusMinutes' in data) || (data.focusMinutes is number && data.focusMinutes >= 0)) &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
+             (!('email' in data) || (data.email is string && data.email.size() <= 100));
+    }
+
+    function isValidStudySet(data) {
+      return data.keys().hasOnly(['id', 'title', 'category', 'updatedInfo', 'masteryPercentage', 'flashcards', 'createdAt', 'updatedAt']) &&
+             data.id is string && data.id.size() <= 100 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+             (!('category' in data) || (data.category is string && data.category.size() <= 100)) &&
+             (!('updatedInfo' in data) || (data.updatedInfo is string && data.updatedInfo.size() <= 100)) &&
+             (!('masteryPercentage' in data) || (data.masteryPercentage is number && data.masteryPercentage >= 0 && data.masteryPercentage <= 100)) &&
+             (!('flashcards' in data) || (data.flashcards is list && data.flashcards.size() <= 500));
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUserData(request.resource.data);
+      allow update: if isOwner(userId) && isValidUserData(request.resource.data);
+      allow delete: if isOwner(userId);
+
+      match /study_sets/{setId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidStudySet(request.resource.data);
+        allow update: if isOwner(userId) && isValidStudySet(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+    }
+
+    // Default deny for everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
