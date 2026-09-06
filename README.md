@@ -111,7 +111,7 @@ SnapStudy/
 
 1. **שכפול המאגר (Clone Repository)**:
    ```bash
-   git clone https://github.com/<YOUR_USERNAME>/SnapStudy.git
+   git clone https://github.com/yaheli-mil/SnapStudy.git
    cd SnapStudy
    ```
 
