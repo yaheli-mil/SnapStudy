@@ -49,3 +49,10 @@ desktop.ini
 
 # AI Agents & scratch files
 .agents/
+
+# Design mockups & local test files
+stitch_designs/
+test_notes.jpg
+*.sample.jpg
+*.sample.png
+
