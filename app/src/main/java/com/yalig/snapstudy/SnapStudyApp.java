@@ -8,12 +8,19 @@ import androidx.appcompat.app.AppCompatDelegate;
 
 public class SnapStudyApp extends Application {
 
+    private static SnapStudyApp instance;
+
     public static final String PREFS_NAME = "snapstudy_theme_prefs";
     public static final String KEY_NIGHT_MODE = "night_mode";
+
+    public static SnapStudyApp getInstance() {
+        return instance;
+    }
 
     @Override
     public void onCreate() {
         super.onCreate();
+        instance = this;
         applySavedTheme(this);
         registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
             @Override

@@ -187,6 +187,9 @@ public class GeminiStudyService {
         String title = obj.optString("title", "ערכת לימוד חדשה");
         String category = obj.optString("category", "כללי");
         String description = obj.optString("description", "נוצר מסריקה חכמה במערכת");
+        if (description.length() > 50) {
+            description = description.substring(0, 47) + "...";
+        }
 
         JSONArray flashcardsArr = obj.optJSONArray("flashcards");
         int count = flashcardsArr != null ? flashcardsArr.length() : 0;

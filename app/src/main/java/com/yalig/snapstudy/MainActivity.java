@@ -71,6 +71,12 @@ public class MainActivity extends AppCompatActivity {
         initViews();
         setupListeners();
         updateUserProfile(currentUser);
+
+        // Pre-load local cache immediately for instant UI rendering
+        if (currentUser != null) {
+            StudyRepository.getInstance().loadLocalData(currentUser.getUid());
+            refreshUI();
+        }
     }
 
     private void updateUserProfile(FirebaseUser user) {
