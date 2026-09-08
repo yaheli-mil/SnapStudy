@@ -15,6 +15,21 @@ public class SnapStudyApp extends Application {
     public void onCreate() {
         super.onCreate();
         applySavedTheme(this);
+        registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
+            @Override
+            public void onActivityCreated(android.app.Activity activity, android.os.Bundle savedInstanceState) {
+                try {
+                    activity.setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                } catch (Exception ignored) {}
+            }
+
+            @Override public void onActivityStarted(android.app.Activity activity) {}
+            @Override public void onActivityResumed(android.app.Activity activity) {}
+            @Override public void onActivityPaused(android.app.Activity activity) {}
+            @Override public void onActivityStopped(android.app.Activity activity) {}
+            @Override public void onActivitySaveInstanceState(android.app.Activity activity, android.os.Bundle outState) {}
+            @Override public void onActivityDestroyed(android.app.Activity activity) {}
+        });
     }
 
     public static void applySavedTheme(Context context) {
