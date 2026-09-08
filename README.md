@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![SnapStudy Logo](app/src/main/res/drawable/ic_snapstudy_logo.xml)
+<img src="app/src/main/res/drawable/ic_snapstudy_logo.png" alt="SnapStudy Logo" width="120" />
 
 **עוזר למידה חכם וסורק סיכומים מבוסס AI לסטודנטים ותלמידים**
 <br>
