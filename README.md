@@ -45,8 +45,7 @@
 - מעקב התקדמות בזמן אמת והצגת סיכום הישגים בסיום הסשן.
 
 ### 🔐 4. מערכת אימות ואבטחה מלאה (Firebase Authentication)
-- **התחברות עם Google**: באמצעות Google Credential Manager העדכני.
-- **התחברות עם Apple**: מיושמת לפי תקני ה-SDK הרשמיים של Firebase ל-Android (כולל טיפול ב-Chrome Custom Tab ומאזינים מוגנים).
+- **התחברות עם Google**: באמצעות Google Credential Manager העדכני בלחיצת כפתור אחת.
 - **אימייל וסיסמה**: רישום, התחברות עם אימות שם משתמש, ואיפוס סיסמה מאובטח המוודא את קיום המשתמש לפני שליחת המייל.
 
 ### ☁️ 5. סנכרון ענן בזמן אמת (Cloud Firestore)
@@ -68,7 +67,7 @@
 | **ממשק משתמש** | Material Design 3, ConstraintLayout, Dynamic RTL, Custom Animations |
 | **מצלמה** | AndroidX CameraX (`camera-camera2`, `camera-lifecycle`, `camera-view`) |
 | **בינה מלאכותית** | Google Gemini 2.5 Flash API |
-| **Backend & Auth** | Firebase Authentication (Google, Apple, Email/Password), Cloud Firestore |
+| **Backend & Auth** | Firebase Authentication (Google, Email/Password), Cloud Firestore |
 | **תאימות** | Min SDK 26 (Android 8.0) - Target SDK 35 (Android 15) |
 
 ---
@@ -85,7 +84,7 @@ SnapStudy/
 │   │   │   │   └── GeminiStudyService.java
 │   │   │   ├── model/                   # מודלים (Flashcard, StudySet, UserStats)
 │   │   │   ├── utils/                   # כלי עזר לאנימציה, עיצוב ותאריכים
-│   │   │   ├── LoginActivity.java       # מסך כניסה/הרשמה (Google, Apple, Email)
+│   │   │   ├── LoginActivity.java       # מסך כניסה/הרשמה (Google, Email)
 │   │   │   ├── MainActivity.java        # מסך בית, סקירת ערכות ויעדים
 │   │   │   ├── ScannerActivity.java     # סורק מסמכים (אוטומטי / ידני)
 │   │   │   ├── FlashcardStudyActivity.java # תרגול אינטראקטיבי
@@ -124,7 +123,7 @@ SnapStudy/
    - הוסף אפליקציית Android עם ה-Package Name: `com.yalig.snapstudy`.
    - הורד את קובץ `google-services.json` והצב אותו בתיקייה:
      `app/google-services.json`.
-   - הפעל ב-Firebase Authentication את הספקים: Email/Password, Google ו-Apple.
+   - הפעל ב-Firebase Authentication את הספקים: Email/Password ו-Google.
 
 4. **הרצת האפליקציה**:
    - חבר מכשיר פיזי או הפעל אמולטור.
@@ -138,7 +137,7 @@ SnapStudy/
 ## 🔒 אבטחה ופרטיות (Security)
 
 - **כללי Firestore**: כל המידע מוגן על ידי כללי Firestore המאפשרים קריאה וכתיבה רק למשתמש המאומת בעל ה-UID התואם.
-- **אבטחת אימות**: שימוש ב-Credential Manager מבית Google ו-OAuthProvider מבית Apple עם עמידה בתקני פרטיות מלאים.
+- **אבטחת אימות**: שימוש ב-Credential Manager מבית Google עם עמידה בתקני פרטיות מלאים.
 
 ---
 

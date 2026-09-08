@@ -110,28 +110,6 @@ public class LoginActivity extends AppCompatActivity {
         initViews();
         setupListeners();
         setAuthMode(false, false);
-        checkPendingAuthResult();
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        checkPendingAuthResult();
-    }
-
-    private void checkPendingAuthResult() {
-        Task<AuthResult> pending = mAuth.getPendingAuthResult();
-        if (pending != null) {
-            // According to Firebase official documentation:
-            // Do not pass Activity (this) to listeners since they get detached when Chrome Custom Tab launches.
-            pending.addOnSuccessListener(authResult -> {
-                Log.d(TAG, "Apple pending auth succeeded");
-                handleAppleSuccess(authResult);
-            }).addOnFailureListener(e -> {
-                Log.e(TAG, "Apple pending auth failed", e);
-                handleAppleAuthError(e);
-            });
-        }
     }
 
     private void initViews() {
@@ -157,11 +135,9 @@ public class LoginActivity extends AppCompatActivity {
 
     private void setupListeners() {
         View btnGoogle = findViewById(R.id.btnGoogle);
-        View btnApple = findViewById(R.id.btnApple);
 
         ViewAnimationUtils.applyTouchScaleEffect(btnLogin);
         ViewAnimationUtils.applyTouchScaleEffect(btnGoogle);
-        ViewAnimationUtils.applyTouchScaleEffect(btnApple);
         ViewAnimationUtils.applyTouchScaleEffect(tvSignUp);
         ViewAnimationUtils.applyTouchScaleEffect(tvForgotPassword);
 
@@ -198,9 +174,6 @@ public class LoginActivity extends AppCompatActivity {
 
         // Google Sign-In
         findViewById(R.id.btnGoogle).setOnClickListener(v -> signInWithGoogle());
-
-        // Apple Sign-In
-        findViewById(R.id.btnApple).setOnClickListener(v -> signInWithApple());
 
         // Forgot Password
         tvForgotPassword.setOnClickListener(v -> handleForgotPassword());
@@ -437,89 +410,7 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
-    private void signInWithApple() {
-        // According to official Firebase documentation (https://firebase.google.com/docs/auth/android/apple):
-        // 1. Check for a pending result first
-        Task<AuthResult> pending = mAuth.getPendingAuthResult();
-        if (pending != null) {
-            pending.addOnSuccessListener(authResult -> {
-                Log.d(TAG, "Apple sign in succeeded via pending result");
-                handleAppleSuccess(authResult);
-            }).addOnFailureListener(e -> {
-                Log.e(TAG, "Apple pending sign in failed", e);
-                handleAppleAuthError(e);
-            });
-            return;
-        }
 
-        // 2. Build OAuthProvider for apple.com
-        OAuthProvider.Builder provider = OAuthProvider.newBuilder("apple.com");
-
-        // 3. Request scopes for email and name
-        List<String> scopes = new ArrayList<>();
-        scopes.add("email");
-        scopes.add("name");
-        provider.setScopes(scopes);
-
-        // 4. Custom parameter for locale
-        provider.addCustomParameter("locale", "he");
-
-        // 5. Start web-based sign-in flow
-        // Important SDK rule from official doc: Do NOT pass Activity (this) to addOnSuccessListener / addOnFailureListener
-        mAuth.startActivityForSignInWithProvider(this, provider.build())
-                .addOnSuccessListener(authResult -> {
-                    Log.d(TAG, "Apple sign in succeeded");
-                    handleAppleSuccess(authResult);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Apple sign in failed", e);
-                    handleAppleAuthError(e);
-                });
-    }
-
-    private void handleAppleSuccess(AuthResult authResult) {
-        if (isFinishing() || isDestroyed()) return;
-        Toast.makeText(this, "התחברת עם Apple בהצלחה!", Toast.LENGTH_SHORT).show();
-        navigateToMain();
-    }
-
-    private void handleAppleAuthError(Exception e) {
-        if (isFinishing() || isDestroyed()) return;
-        String msg = e != null ? e.getMessage() : "";
-        if (msg == null) msg = "";
-
-        if (e instanceof FirebaseAuthUserCollisionException) {
-            new AlertDialog.Builder(this)
-                    .setTitle("כתובת אימייל כבר קיימת")
-                    .setMessage("חשבון עם כתובת אימייל זו כבר קיים ב-SnapStudy.\nנא להתחבר באמצעות הסיסמה או הספק ששימש להרשמה המקורית.")
-                    .setPositiveButton("הבנתי", null)
-                    .show();
-            return;
-        }
-
-        if (msg.contains("Code flow is not enabled for Apple") ||
-                msg.contains("operation is not allowed") ||
-                msg.contains("sign-in provider is disabled") ||
-                msg.contains("CONFIGURATION_NOT_FOUND")) {
-            new AlertDialog.Builder(this)
-                    .setTitle("הגדרת Apple Sign-In ב-Firebase")
-                    .setMessage("ההתחברות באמצעות Apple דורשת השלמת הגדרה ב-Firebase Console:\n\n" +
-                            "1. כנס ל-Firebase Console -> Authentication -> Sign-in method.\n" +
-                            "2. בחר בספק Apple והפעל את 'Code flow' (באמצעות Services ID, Team ID וקובץ מפתח p8 מ-Apple Developer).\n" +
-                            "3. ודא שכתובת ה-Callback מוגדרת ב-Apple Developer:\nhttps://android-studio-40230.firebaseapp.com/__/auth/handler\n\n" +
-                            "בינתיים ניתן להתחבר ישירות באמצעות חשבון Google או כתובת אימייל וסיסמה!")
-                    .setPositiveButton("הבנתי", null)
-                    .show();
-        } else if (msg.contains("closed by the user") || msg.contains("canceled") || msg.contains("Canceled") || msg.contains("ERROR_WEB_CONTEXT_CANCELED")) {
-            Toast.makeText(this, "ההתחברות בוטלה על ידי המשתמש", Toast.LENGTH_SHORT).show();
-        } else {
-            new AlertDialog.Builder(this)
-                    .setTitle("שגיאה בהתחברות עם Apple")
-                    .setMessage(e != null && e.getLocalizedMessage() != null ? e.getLocalizedMessage() : msg)
-                    .setPositiveButton("סגור", null)
-                    .show();
-        }
-    }
 
     private void handleForgotPassword() {
         String currentEmail = etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
@@ -593,7 +484,7 @@ public class LoginActivity extends AppCompatActivity {
                                 if (!methods.contains("password")) {
                                     btnPositive.setEnabled(true);
                                     btnPositive.setText("שלח קישור ✨");
-                                    String provider = methods.contains("google.com") ? "Google" : (methods.contains("apple.com") ? "Apple" : "חשבון חיצוני");
+                                    String provider = methods.contains("google.com") ? "Google" : "חשבון חיצוני";
                                     new AlertDialog.Builder(LoginActivity.this)
                                             .setTitle("חשבון ללא סיסמה")
                                             .setMessage("חשבון זה מחובר באמצעות " + provider + ".\nאין צורך באיפוס סיסמה — ניתן להתחבר ישירות באמצעות כפתור " + provider + ".")

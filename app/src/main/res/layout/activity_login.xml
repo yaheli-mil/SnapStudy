@@ -276,53 +276,25 @@
                             android:background="@color/surface_container_high" />
                     </LinearLayout>
 
-                    <!-- Social Sign-in Buttons -->
-                    <LinearLayout
+                    <!-- Google Sign-in Button -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnGoogle"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="50dp"
                         android:layout_marginTop="14dp"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnGoogle"
-                            style="@style/Widget.Material3.Button.OutlinedButton"
-                            android:layout_width="0dp"
-                            android:layout_height="48dp"
-                            android:layout_weight="1"
-                            android:layoutDirection="ltr"
-                            android:text="Google"
-                            android:textColor="@color/on_surface"
-                            android:textSize="13sp"
-                            app:cornerRadius="10dp"
-                            app:icon="@drawable/fui_ic_googleg_color_24dp"
-                            app:iconGravity="textStart"
-                            app:iconPadding="8dp"
-                            app:iconSize="20dp"
-                            app:iconTint="@null"
-                            app:strokeColor="@color/surface_container_high" />
-
-                        <Space
-                            android:layout_width="14dp"
-                            android:layout_height="0dp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnApple"
-                            style="@style/Widget.Material3.Button.OutlinedButton"
-                            android:layout_width="0dp"
-                            android:layout_height="48dp"
-                            android:layout_weight="1"
-                            android:layoutDirection="ltr"
-                            android:text="Apple"
-                            android:textColor="@color/on_surface"
-                            android:textSize="13sp"
-                            app:cornerRadius="10dp"
-                            app:icon="@drawable/fui_ic_apple_white_24dp"
-                            app:iconGravity="textStart"
-                            app:iconPadding="8dp"
-                            app:iconSize="20dp"
-                            app:iconTint="@color/on_surface"
-                            app:strokeColor="@color/surface_container_high" />
-                    </LinearLayout>
+                        android:layoutDirection="ltr"
+                        android:text="המשך באמצעות Google"
+                        android:textColor="@color/on_surface"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp"
+                        app:icon="@drawable/fui_ic_googleg_color_24dp"
+                        app:iconGravity="textStart"
+                        app:iconPadding="10dp"
+                        app:iconSize="20dp"
+                        app:iconTint="@null"
+                        app:strokeColor="@color/surface_container_high" />
 
                 </LinearLayout>
 
