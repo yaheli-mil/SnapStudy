@@ -1,0 +1,152 @@
+@startuml SnapStudy_ClassDiagram
+skinparam classAttributeIconSize 0
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+package "models" {
+    class Flashcard {
+        - id: String
+        - question: String
+        - answer: String
+        - topic: String
+        - intervalDays: int
+        - repetitionCount: int
+        - difficulty: int
+        + incrementRepetition(): void
+    }
+
+    class StudySet {
+        - id: String
+        - title: String
+        - category: String
+        - updatedInfo: String
+        - masteryPercentage: int
+        - flashcards: List<Flashcard>
+        + getCardCount(): int
+        + addFlashcard(card: Flashcard): void
+    }
+}
+
+package "data" {
+    interface DataCallback {
+        + onComplete(): void
+    }
+
+    class StudyRepository <<singleton>> {
+        - {static} instance: StudyRepository
+        - db: FirebaseFirestore
+        - studySets: List<StudySet>
+        - streakDays: int
+        - cardsStudiedToday: int
+        - dailyGoal: int
+        - focusMinutes: int
+        + {static} getInstance(): StudyRepository
+        + loadLocalData(uid: String): void
+        + saveLocalData(uid: String): void
+        + syncWithFirestore(callback: DataCallback): void
+        + getAllStudySets(): List<StudySet>
+        + getStudySetById(id: String): StudySet
+        + addStudySet(set: StudySet): void
+        + updateStudySet(set: StudySet): void
+        + recordCardStudied(): void
+        + clearData(): void
+    }
+}
+
+package "ai" {
+    class GeminiConfig {
+        + {static} getApiKey(context: Context): String
+        + {static} hasApiKey(context: Context): boolean
+    }
+
+    interface AiStudyCallback {
+        + onSuccess(studySet: StudySet): void
+        + onError(errorMessage: String): void
+    }
+
+    class GeminiStudyService {
+        + {static} generateFlashcardsFromBitmap(ctx: Context, bmp: Bitmap, cb: AiStudyCallback): void
+        - {static} parseStudySetFromJson(json: String): StudySet
+    }
+}
+
+package "ui_and_utils" {
+    class DocumentOverlayView {
+        - currentRect: RectF
+        - label: String
+        + setLabel(label: String): void
+        + setDetectedBounds(rect: RectF): void
+        + clear(): void
+    }
+
+    class ViewAnimationUtils <<utility>> {
+        + {static} applyTouchScaleEffect(view: View): void
+        + {static} animateStaggeredEntrance(view: View, delayMs: long): void
+        + {static} startActivityWithTransition(activity: Activity, intent: Intent): void
+        + {static} finishWithTransition(activity: Activity): void
+    }
+}
+
+package "activities" {
+    class SnapStudyApp {
+        - {static} instance: SnapStudyApp
+        + {static} getInstance(): SnapStudyApp
+        + {static} applySavedTheme(context: Context): void
+        + {static} saveThemeMode(context: Context, mode: int): void
+        + {static} isNotificationsEnabled(context: Context): boolean
+    }
+
+    class LoginActivity {
+        - mAuth: FirebaseAuth
+        - isSignUpMode: boolean
+        - handleEmailAuth(): void
+        - signInWithGoogle(): void
+        - handleForgotPassword(): void
+    }
+
+    class MainActivity {
+        - currentSearch: String
+        - updateUserProfile(user: FirebaseUser): void
+        - refreshUI(): void
+        - populateStudySets(query: String): void
+        - showCreateSetDialog(): void
+    }
+
+    class ScannerActivity {
+        - isAutoMode: boolean
+        - textRecognizer: TextRecognizer
+        - analyzeImageForDocument(imageProxy: ImageProxy): void
+        - takePhotoAndProcess(): void
+        - processImageWithAi(bitmap: Bitmap): void
+    }
+
+    class FlashcardsActivity {
+        - studySet: StudySet
+        - cards: List<Flashcard>
+        - currentIndex: int
+        - revealAnswer(): void
+        - onRatingSelected(difficulty: int, msg: String): void
+    }
+
+    class SettingsActivity {
+        - updateThemeButtonsUI(mode: int): void
+        - showEditDailyGoalDialog(badge: TextView): void
+    }
+}
+
+StudySet "1" *-- "0..*" Flashcard : contains
+StudyRepository "1" o-- "0..*" StudySet : manages
+StudyRepository +-- DataCallback
+GeminiStudyService +-- AiStudyCallback
+
+GeminiStudyService ..> StudySet : creates
+MainActivity ..> StudyRepository : sync & fetch
+MainActivity ..> FlashcardsActivity : opens
+MainActivity ..> ScannerActivity : opens
+ScannerActivity ..> DocumentOverlayView : displays
+ScannerActivity ..> GeminiStudyService : AI analysis
+ScannerActivity ..> StudyRepository : saves set
+FlashcardsActivity ..> StudyRepository : updates progress
+SettingsActivity ..> StudyRepository : updates goals
+@enduml
