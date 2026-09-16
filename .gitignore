@@ -1,58 +1,16 @@
-# Built application files
-*.apk
-*.aar
-*.ap_
-*.aab
-
-# Files for the ART/Dalvik VM
-*.dex
-
-# Java class files
-*.class
-
-# Generated files
-bin/
-gen/
-out/
-
-# Gradle files
+*.iml
 .gradle/
+local.properties
+.idea/
+.DS_Store
 build/
 */build/
-
-# Local configuration file (sdk path, api keys, etc)
-local.properties
-
-# Log files
-*.log
-
-# Android Studio temporary & user-specific files
-.navigation/
 captures/
 .externalNativeBuild/
 .cxx/
-
-# IntelliJ IDEA / Android Studio project files
-*.iml
-.idea/
-!.idea/codeStyles/
-!.idea/misc.xml
-
-# Keystore files
-*.jks
-*.keystore
-
-# OS-specific files
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# AI Agents & scratch files
+*.apk
+*.aar
+*.aab
 .agents/
-
-# Design mockups & local test files
 stitch_designs/
-test_notes.jpg
-*.sample.jpg
-*.sample.png
 
