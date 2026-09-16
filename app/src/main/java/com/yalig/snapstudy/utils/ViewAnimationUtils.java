@@ -10,10 +10,23 @@ import android.view.animation.OvershootInterpolator;
 
 import com.yalig.snapstudy.R;
 
+/**
+ * מחלקת שירות (Utility Class) לניהול אנימציות ממשק, משוב מגע (Haptic/Tactile Feedback) ומעברי מסכים.
+ * מחלקה זו מרכזת פונקציות סטטיות המעניקות לאפליקציה תחושה מודרנית, חיה וזורמת:
+ * 1. אפקט לחיצה קפיצי על כפתורים וכרטיסים.
+ * 2. אנימציות כניסה מדורגות (Staggered Entrance) לרכיבים בעת עליית המסך.
+ * 3. מיקרו-אנימציות לבחירת טאבים בסרגל הניווט התחתון.
+ * 4. מעברי מסכים מותאמים אישית התואמים לכל גרסאות ה-Android (כולל תמיכה ב-Android 14+).
+ */
 public class ViewAnimationUtils {
 
     /**
-     * Applies a tactile spring press effect (scale down on press, bounce back on release).
+     * מחילה אפקט לחיצה קפיצי ואינטראקטיבי על רכיב תצוגה (View).
+     * בעת לחיצה (ACTION_DOWN) הרכיב מתכווץ קלות ל-95% מגודלו.
+     * בעת שחרור האצבע (ACTION_UP) הרכיב חוזר לגודלו המלא עם קפיצה קלה (Overshoot).
+     * הערה: הפונקציה מחזירה false מתוך ה-OnTouchListener כדי לא לבלוע את האירוע
+     * ולאפשר ל-OnClickListener הרגיל לפעול כסדרו.
+     * @param view הרכיב עליו יוחל האפקט.
      */
     public static void applyTouchScaleEffect(View view) {
         if (view == null) return;
@@ -21,6 +34,7 @@ public class ViewAnimationUtils {
         view.setOnTouchListener((v, event) -> {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
+                    // כיווץ מהיר ועדין בעת הנחת האצבע
                     v.animate()
                             .scaleX(0.95f)
                             .scaleY(0.95f)
@@ -30,6 +44,7 @@ public class ViewAnimationUtils {
                     break;
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
+                    // חזרה קפיצית ונעימה לגודל המקורי
                     v.animate()
                             .scaleX(1.0f)
                             .scaleY(1.0f)
@@ -38,19 +53,26 @@ public class ViewAnimationUtils {
                             .start();
                     break;
             }
-            // Return false so existing OnClickListener or Ripple effects continue to work normally
+            // החזרת false מאפשרת לאירועי Click ו-Ripple להמשיך לפעול כרגיל
             return false;
         });
     }
 
     /**
-     * Staggered entrance animation for cards/views sliding up smoothly from bottom.
+     * מפעילה אנימציית כניסה מדורגת לרכיבי המסך:
+     * הרכיב מתחיל בשקיפות מלאה (Alpha = 0) ומוסט מעט למטה (TranslationY = 48),
+     * ומחליק למקומו הטבעי כלפי מעלה עם הופעה חלקה (Fade-in).
+     * @param view הרכיב להנפשה.
+     * @param delayMs השהייה במילי-שניות לפני תחילת האנימציה (ליצירת רצף מדורג בין רכיבים שונים).
      */
     public static void animateStaggeredEntrance(View view, long delayMs) {
         if (view == null) return;
 
+        // הגדרת מצב התחלתי לפני תחילת האנימציה
         view.setAlpha(0f);
         view.setTranslationY(48f);
+
+        // הפעלת האנימציה עם השהייה מתאימה
         view.animate()
                 .alpha(1f)
                 .translationY(0f)
@@ -61,7 +83,9 @@ public class ViewAnimationUtils {
     }
 
     /**
-     * Bouncy tab selection micro-animation for bottom navigation.
+     * מיקרו-אנימציה קופצנית לבחירת טאב פעיל בסרגל הניווט התחתון.
+     * @param iconView האייקון של הטאב שנבחר.
+     * @param dotView נקודת החיווי הזעירה (אם קיימת).
      */
     public static void animateTabSelection(View iconView, View dotView) {
         if (iconView != null) {
@@ -97,7 +121,11 @@ public class ViewAnimationUtils {
     }
 
     /**
-     * Applies open transition to current activity.
+     * מחילה אנימציית מעבר פתיחה חלקה למסך הנפתח.
+     * בודקת את גרסת מערכת ההפעלה Android:
+     * ב-Android 14 ומעלה (API 34+) משתמשת ב-overrideActivityTransition המודרני,
+     * ובגרסאות קודמות משתמשת ב-overridePendingTransition המסורתי.
+     * @param activity המסך ממנו מבוצע המעבר.
      */
     public static void applyActivityOpenTransition(Activity activity) {
         if (activity == null) return;
@@ -113,7 +141,9 @@ public class ViewAnimationUtils {
     }
 
     /**
-     * Applies close transition to current activity.
+     * מחילה אנימציית מעבר סגירה חלקה בעת יציאה או סגירת מסך.
+     * תואמת גם ל-Android 14 ומעלה וגם לגרסאות ותיקות.
+     * @param activity המסך שנסגר.
      */
     public static void applyActivityCloseTransition(Activity activity) {
         if (activity == null) return;
@@ -129,7 +159,9 @@ public class ViewAnimationUtils {
     }
 
     /**
-     * Starts an Activity with modern smooth slide/fade transition.
+     * פותחת Activity חדש בליווי אנימציית מעבר חלקה.
+     * @param activity המסך הנוכחי.
+     * @param intent כוונת המעבר (Intent).
      */
     public static void startActivityWithTransition(Activity activity, Intent intent) {
         if (activity == null || intent == null) return;
@@ -138,7 +170,8 @@ public class ViewAnimationUtils {
     }
 
     /**
-     * Finishes an Activity with modern smooth reverse slide/fade transition.
+     * סוגרת את ה-Activity הנוכחי עם אנימציית חזרה חלקה.
+     * @param activity המסך לסגירה.
      */
     public static void finishWithTransition(Activity activity) {
         if (activity == null) return;
@@ -146,3 +179,4 @@ public class ViewAnimationUtils {
         applyActivityCloseTransition(activity);
     }
 }
+

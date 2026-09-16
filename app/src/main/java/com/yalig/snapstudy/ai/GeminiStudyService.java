@@ -25,26 +25,54 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
+/**
+ * שירות עיבוד ובינה מלאכותית מול מנוע Google Gemini (גרסת gemini-2.5-flash).
+ * מחלקה זו אחראית על:
+ * 1. קבלת תמונת מסמך (Bitmap) ממצלמת האפליקציה או מהגלריה.
+ * 2. כיווץ והמרת התמונה לקידוד Base64 JPEG כדי לייעל את תעבורת הרשת.
+ * 3. הרכבת בקשת JSON מובנית הכוללת הנחיה פדגוגית (Prompt) ואת המידע הוויזואלי.
+ * 4. ביצוע קריאת HTTP POST אסינכרונית בעזרת ספריית OkHttpClient.
+ * 5. פענוח תשובת ה-JSON המוחזרת מהמודל והמרתה לאובייקט StudySet המכיל כרטיסיות לימוד.
+ */
 public class GeminiStudyService {
 
+    // תגית לרישום לוגים במערכת לצורכי ניפוי שגיאות (Debug)
     private static final String TAG = "GeminiStudyService";
+
+    // שם המודל המהיר והרב-מודאלי שבו אנו משתמשים לחילוץ טקסט מתמונות
     private static final String GEMINI_MODEL = "gemini-2.5-flash";
+
+    // כתובת הבסיס לקריאת ה-REST API של שירותי Google AI
     private static final String BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/" + GEMINI_MODEL + ":generateContent?key=";
 
+    /**
+     * ממשק Callback להחזרת תוצאות הפענוח למסך הקורא (ScannerActivity)
+     */
     public interface AiStudyCallback {
+        // מופעל בהצלחה בעת סיום פענוח הערכה
         void onSuccess(StudySet studySet);
+        // מופעל במקרה של שגיאת רשת, שגיאת מפתח או פענוח
         void onError(String errorMessage);
     }
 
+    // לקוח HTTP מוגדר עם זמני המתנה (Timeouts) מתאימים להעלאת תמונות ועיבוד ענן
     private static final OkHttpClient httpClient = new OkHttpClient.Builder()
             .connectTimeout(45, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
             .writeTimeout(60, TimeUnit.SECONDS)
             .build();
 
+    // Handler להחזרת תוצאות ה-Callback ישירות אל ה-UI Thread הראשי של אנדרואיד
     private static final Handler mainHandler = new Handler(Looper.getMainLooper());
 
+    /**
+     * הפונקציה המרכזית: מקבלת Bitmap של מסמך ושולחת אותו לניתוח בענן.
+     * @param context הקשר המערכת לקריאת הגדרות ומפתח ה-API.
+     * @param bitmap תמונת המסמך או המחברת שנלכדה במצלמה.
+     * @param callback ממשק המאזין לקבלת התוצאה.
+     */
     public static void generateFlashcardsFromBitmap(Context context, Bitmap bitmap, AiStudyCallback callback) {
+        // שלב 1: שליפת מפתח ה-API מהקונפיגורציה
         String apiKey = GeminiConfig.getApiKey(context);
 
         if (apiKey == null || apiKey.trim().isEmpty()) {
@@ -52,18 +80,21 @@ public class GeminiStudyService {
             return;
         }
 
-        // Scale bitmap down to max 1280px to optimize network payload while preserving text clarity
+        // שלב 2: הקטנת ממדי התמונה (עד 1280 פיקסלים) כדי לחסוך ברוחב פס תוך שמירה על קריאות מלאה של הטקסט
         Bitmap scaledBitmap = scaleBitmapIfNeeded(bitmap, 1280);
+
+        // שלב 3: המרת התמונה למחרוזת Base64 בפורמט JPEG
         String base64Jpeg = bitmapToBase64Jpeg(scaledBitmap);
 
         try {
+            // שלב 4: בניית גוף הבקשה בפורמט JSON לפי המפרט הרשמי של Gemini API
             JSONObject requestJson = new JSONObject();
 
             JSONArray contents = new JSONArray();
             JSONObject contentObj = new JSONObject();
             JSONArray parts = new JSONArray();
 
-            // Prompt part
+            // חלק 1 בבקשה: הנחיה פדגוגית מפורטת למודל (Prompt) המגדירה את הפורמט הנדרש
             JSONObject textPart = new JSONObject();
             textPart.put("text",
                     "אתה מורה פרטי מומחה ופדגוג מקצועי. התבונן היטב בתמונה המצורפת (דף סיכום, ספר, מחברת, מצגת או צילום לוח).\n" +
@@ -85,7 +116,7 @@ public class GeminiStudyService {
                     "חלץ בין 3 ל-10 כרטיסיות ממוקדות בהתאם לכמות החומר שבתמונה.");
             parts.put(textPart);
 
-            // Image part
+            // חלק 2 בבקשה: נתוני התמונה המקודדים (Inline Data)
             JSONObject imagePart = new JSONObject();
             JSONObject inlineData = new JSONObject();
             inlineData.put("mime_type", "image/jpeg");
@@ -97,12 +128,13 @@ public class GeminiStudyService {
             contents.put(contentObj);
             requestJson.put("contents", contents);
 
-            // Generation config with JSON response enforcement
+            // הגדרות יצירה (Generation Config) - אכיפת פלט בפורמט JSON בלבד וטמפרטורה נמוכה לתשובות מדויקות
             JSONObject generationConfig = new JSONObject();
             generationConfig.put("response_mime_type", "application/json");
             generationConfig.put("temperature", 0.2);
             requestJson.put("generationConfig", generationConfig);
 
+            // בניית כתובת ה-URL המלאה עם המפתח
             String url = BASE_URL + apiKey;
             RequestBody body = RequestBody.create(
                     requestJson.toString(),
@@ -114,15 +146,18 @@ public class GeminiStudyService {
                     .post(body)
                     .build();
 
+            // שלב 5: ביצוע הקריאה האסינכרונית ברקע
             httpClient.newCall(request).enqueue(new Callback() {
                 @Override
                 public void onFailure(Call call, IOException e) {
+                    // טיפול בשגיאת רשת (למשל אינטרנט מנותק)
                     Log.e(TAG, "Network call failed: " + e.getMessage());
                     mainHandler.post(() -> callback.onError("שגיאת תקשורת עם המערכת. יש לוודא חיבור לאינטרנט."));
                 }
 
                 @Override
                 public void onResponse(Call call, Response response) throws IOException {
+                    // בדיקת קוד התגובה של השרת
                     if (!response.isSuccessful()) {
                         String errBody = response.body() != null ? response.body().string() : "";
                         Log.e(TAG, "API error (" + response.code() + "): " + errBody);
@@ -137,6 +172,7 @@ public class GeminiStudyService {
                     }
 
                     try {
+                        // שלב 6: חילוץ התשובה הטקסטואלית מגוף ה-JSON המוחזר
                         String respString = response.body().string();
                         JSONObject respJson = new JSONObject(respString);
                         JSONArray candidates = respJson.optJSONArray("candidates");
@@ -153,6 +189,8 @@ public class GeminiStudyService {
                         }
 
                         String jsonText = respParts.getJSONObject(0).optString("text", "");
+                        
+                        // שלב 7: פענוח מחרוזת ה-JSON לערכת לימוד מוכנה
                         StudySet studySet = parseStudySetFromJson(jsonText);
                         mainHandler.post(() -> callback.onSuccess(studySet));
 
@@ -169,8 +207,13 @@ public class GeminiStudyService {
         }
     }
 
+    /**
+     * מפענחת את מחרוזת ה-JSON שהתקבלה מהמודל ובונה ממנה אובייקט מסוג StudySet.
+     * @param jsonString טקסט התשובה הגולמי.
+     * @return אובייקט StudySet מאוכלס בכרטיסיות.
+     */
     private static StudySet parseStudySetFromJson(String jsonString) throws Exception {
-        // Strip markdown backticks if any
+        // ניקוי תגיות Markdown (במידה והמודל עטף את הפלט ב-```json)
         String clean = jsonString.trim();
         if (clean.startsWith("```json")) {
             clean = clean.substring(7);
@@ -193,10 +236,13 @@ public class GeminiStudyService {
 
         JSONArray flashcardsArr = obj.optJSONArray("flashcards");
         int count = flashcardsArr != null ? flashcardsArr.length() : 0;
-        String setId = "ai_set_" + System.currentTimeMillis();
+        
+        // יצירת מזהה ייחודי עבור ערכת הלימוד החדשה
+        String setId = "set_" + System.currentTimeMillis();
 
         StudySet set = new StudySet(setId, title, category, description + " • " + count + " כרטיסיות", 0);
 
+        // מעבר על מערך הכרטיסיות והוספתן לערכה
         if (flashcardsArr != null) {
             for (int i = 0; i < flashcardsArr.length(); i++) {
                 JSONObject fcObj = flashcardsArr.getJSONObject(i);
@@ -209,6 +255,7 @@ public class GeminiStudyService {
             }
         }
 
+        // גיבוי למקרה שהערכה נוצרה ללא כרטיסיות
         if (set.getFlashcards().isEmpty()) {
             set.addFlashcard(new Flashcard("fc_default_1", "מהו הרעיון המרכזי שנלמד במסמך זה?", "המסמך מציג מושגי יסוד ועיקרי החומר כפי שנסרקו.", category));
         }
@@ -216,6 +263,13 @@ public class GeminiStudyService {
         return set;
     }
 
+    /**
+     * פונקציית עזר לשינוי גודל תמונה (Scaling) תוך שמירה מדויקת על יחס הגובה-רוחב (Aspect Ratio).
+     * מטרתה למנוע שליחת קבצים ענקיים לרשת ולמנוע בעיות זיכרון (OutOfMemoryError).
+     * @param original התמונה המקורית.
+     * @param maxDimension הגודל המקסימלי בפיקסלים לצלע הארוכה ביותר.
+     * @return תמונה מוקטנת וחדה.
+     */
     private static Bitmap scaleBitmapIfNeeded(Bitmap original, int maxDimension) {
         int width = original.getWidth();
         int height = original.getHeight();
@@ -237,6 +291,11 @@ public class GeminiStudyService {
         return Bitmap.createScaledBitmap(original, newWidth, newHeight, true);
     }
 
+    /**
+     * ממירה Bitmap של תמונה למחרוזת בינארית בקידוד Base64 עם דחיסת JPEG.
+     * @param bitmap התמונה לדחיסה והמרה.
+     * @return מחרוזת Base64 המוכנה להטמעה ב-JSON.
+     */
     private static String bitmapToBase64Jpeg(Bitmap bitmap) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream);
@@ -244,3 +303,4 @@ public class GeminiStudyService {
         return Base64.encodeToString(byteArray, Base64.NO_WRAP);
     }
 }
+

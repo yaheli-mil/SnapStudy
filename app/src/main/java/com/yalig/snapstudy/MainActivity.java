@@ -31,16 +31,36 @@ import com.yalig.snapstudy.utils.ViewAnimationUtils;
 
 import java.util.List;
 
+/**
+ * המסך הראשי של האפליקציה (Dashboard / MainActivity).
+ * מסך זה מהווה את מרכז הבקרה של הלומד ומספק:
+ * 1. תצוגת מדדי למידה אישיים: כרטיסיות שנלמדו היום מול היעד היומי, דקות ריכוז, ותגית רצף ימים (Streak 🔥).
+ * 2. הצגת כרטיסי ערכות הלימוד הקיימות בצורה דינמית עם מד התקדמות (Mastery) ותגיות מקצוע צבעוניות.
+ * 3. חיפוש וסינון ערכות לימוד בזמן אמת (Live Search).
+ * 4. גישה מהירה לסורק החכם (ScannerActivity), יצירת ערכה ידנית, ומעבר למסך ההגדרות.
+ */
 public class MainActivity extends AppCompatActivity {
 
+    // מכולה דינמית (LinearLayout) שבה מוזרקים כרטיסי ערכות הלימוד
     private LinearLayout llStudySetsContainer;
+
+    // שדה חיפוש חי לסינון ערכות לפי שם או מקצוע
     private EditText etSearch;
+
+    // רכיבי תצוגת מדדים בלוח הבקרה
     private TextView tvTargetMetric;
     private TextView tvFocusMetric;
     private TextView streakBadge;
+
+    // מצבי תצוגה: מסך ריק למשתמש חדש לעומת רשימת ערכות למשתמש פעיל
     private View layoutNewUser;
     private View layoutExistingUser;
+
+    // מחרוזת החיפוש הפעילה כעת
     private String currentSearch = "";
+
+    // משתנה מעקב אחר מצב ערכת הנושא לצורך זיהוי שינויים בעת חזרה ממסך ההגדרות
+    private int lastKnownThemeMode = -999;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,7 +68,8 @@ public class MainActivity extends AppCompatActivity {
         SnapStudyApp.applyThemeToActivity(this);
         super.onCreate(savedInstanceState);
 
-        com.google.firebase.auth.FirebaseUser currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+        // בדיקה האם יש משתמש מחובר במערכת - אם לא, הפניה מיידית למסך ההתחברות
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
             startActivity(new Intent(this, LoginActivity.class));
             finish();
@@ -58,6 +79,7 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
+        // התאמת שולי המסך לפסי המערכת של Android
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
@@ -72,13 +94,17 @@ public class MainActivity extends AppCompatActivity {
         setupListeners();
         updateUserProfile(currentUser);
 
-        // Pre-load local cache immediately for instant UI rendering
+        // טעינה מקומית מיידית מה-Cache המקומי לתצוגה מהירה ללא השהייה
         if (currentUser != null) {
             StudyRepository.getInstance().loadLocalData(currentUser.getUid());
             refreshUI();
         }
     }
 
+    /**
+     * מעדכנת את פרטי המשתמש המוצגים בראש המסך: שם וברכה אישית, ותמונת פרופיל.
+     * @param user המשתמש המחובר מ-Firebase Auth.
+     */
     private void updateUserProfile(FirebaseUser user) {
         if (user == null) return;
 
@@ -95,6 +121,7 @@ public class MainActivity extends AppCompatActivity {
             tvGreeting.setText("שלום, " + name + " 👋");
         }
 
+        // טעינת תמונת הפרופיל באמצעות ספריית Glide החיצונית
         ShapeableImageView ivUserAvatar = findViewById(R.id.ivUserAvatar);
         if (ivUserAvatar != null && user.getPhotoUrl() != null) {
             Glide.with(this)
@@ -106,8 +133,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private int lastKnownThemeMode = -999;
-
+    /**
+     * במחזור החיים onResume - המסך חוזר לקדמת הבמה.
+     * בודקת האם הנושא (Theme) השתנה ומסנכרנת נתונים מול הענן.
+     */
     @Override
     protected void onResume() {
         super.onResume();
@@ -122,10 +151,13 @@ public class MainActivity extends AppCompatActivity {
         updateUserProfile(FirebaseAuth.getInstance().getCurrentUser());
         refreshUI();
 
+        // סנכרון רקע מול Cloud Firestore
         StudyRepository.getInstance().syncWithFirestore(() -> runOnUiThread(this::refreshUI));
     }
 
-
+    /**
+     * אתחול רכיבי הממשק והפעלת אנימציות כניסה מדורגות (Staggered Entrance).
+     */
     private void initViews() {
         llStudySetsContainer = findViewById(R.id.llStudySetsContainer);
         etSearch = findViewById(R.id.etSearch);
@@ -144,7 +176,7 @@ public class MainActivity extends AppCompatActivity {
             tvTipContent.setText(sb);
         }
 
-        // Staggered entrance animation for content elements
+        // אנימציות כניסה מדורגות לרכיבי הממשק השונים
         ViewAnimationUtils.animateStaggeredEntrance(findViewById(R.id.cardTodayTarget), 80);
         ViewAnimationUtils.animateStaggeredEntrance(findViewById(R.id.cardFocusTime), 140);
         ViewAnimationUtils.animateStaggeredEntrance(findViewById(R.id.cardSearch), 200);
@@ -153,8 +185,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * הגדרת מאזיני לחיצה, חיפוש חי, ואפקטי מגע לכל כפתורי המסך.
+     */
     private void setupListeners() {
-        // Apply spring/press tactile feedback to interactive views
+        // החלת אפקט לחיצה קפיצי
         ViewAnimationUtils.applyTouchScaleEffect(findViewById(R.id.btnEmptyScan));
         ViewAnimationUtils.applyTouchScaleEffect(findViewById(R.id.btnEmptyNewSet));
         ViewAnimationUtils.applyTouchScaleEffect(findViewById(R.id.btnScanDoc));
@@ -165,7 +200,7 @@ public class MainActivity extends AppCompatActivity {
         ViewAnimationUtils.applyTouchScaleEffect(findViewById(R.id.tabScanner));
         ViewAnimationUtils.applyTouchScaleEffect(findViewById(R.id.tabSettings));
 
-        // New User Empty State Actions
+        // פעולות במסך משתמש חדש (ללא ערכות)
         View btnEmptyScan = findViewById(R.id.btnEmptyScan);
         if (btnEmptyScan != null) {
             btnEmptyScan.setOnClickListener(v -> ViewAnimationUtils.startActivityWithTransition(this, new Intent(this, ScannerActivity.class)));
@@ -176,7 +211,7 @@ public class MainActivity extends AppCompatActivity {
             btnEmptyNewSet.setOnClickListener(v -> showCreateSetDialog());
         }
 
-        // Live search filter
+        // סינון וחיפוש חי בעת הקלדה בתיבת החיפוש
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -191,33 +226,29 @@ public class MainActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {}
         });
 
-        // Quick action: Scan document
+        // כפתור סריקת מסמך מהיר
         findViewById(R.id.btnScanDoc).setOnClickListener(v -> {
             ViewAnimationUtils.startActivityWithTransition(this, new Intent(this, ScannerActivity.class));
         });
 
-        // Quick action: Create new deck manually
+        // כפתור יצירת ערכה חדשה ידנית
         findViewById(R.id.btnNewSet).setOnClickListener(v -> showCreateSetDialog());
 
-        // Header View All button
+        // כפתור "צפה בהכל" - מאפס את החיפוש
         findViewById(R.id.btnViewAll).setOnClickListener(v -> {
             etSearch.setText("");
         });
 
-        // Avatar click opens Settings
+        // לחיצה על תמונת המשתמש פותחת את מסך ההגדרות
         findViewById(R.id.ivUserAvatar).setOnClickListener(v -> {
             ViewAnimationUtils.startActivityWithTransition(this, new Intent(this, SettingsActivity.class));
         });
 
-        // Bottom Navigation Tabs
+        // לשוניות הניווט בסרגל התחתון
         View tabHome = findViewById(R.id.tabHome);
         if (tabHome != null) {
-            tabHome.setOnClickListener(v -> {
-                View dot = tabHome.findViewById(R.id.tabHome); // active dot indicator
-                ViewAnimationUtils.animateTabSelection(tabHome, null);
-            });
+            tabHome.setOnClickListener(v -> ViewAnimationUtils.animateTabSelection(tabHome, null));
         }
-
 
         findViewById(R.id.tabScanner).setOnClickListener(v -> {
             ViewAnimationUtils.startActivityWithTransition(this, new Intent(this, ScannerActivity.class));
@@ -228,6 +259,9 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * מרעננת את כל ממשק המשתמש במסך בהתאם לנתונים המעודכנים ב-Repository.
+     */
     private void refreshUI() {
         refreshMetrics();
         List<StudySet> allSets = StudyRepository.getInstance().getAllStudySets();
@@ -242,6 +276,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * מעדכנת את תצוגת המדדים: מספר כרטיסיות היום מול יעד יומי, דקות ריכוז, ותגית ה-Streak.
+     */
     private void refreshMetrics() {
         StudyRepository repo = StudyRepository.getInstance();
         if (tvTargetMetric != null) {
@@ -255,6 +292,7 @@ public class MainActivity extends AppCompatActivity {
             tvFocusMetric.setText(String.valueOf(repo.getFocusMinutes()));
         }
 
+        // הצגת תגית רצף (Streak) אם המשתמש למד לפחות יומיים ברצף
         int streak = repo.getStreakDays();
         if (streakBadge != null) {
             if (streak >= 2 && !repo.getAllStudySets().isEmpty()) {
@@ -266,12 +304,18 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * מאכלסת את רשימת ערכות הלימוד במסך באופן דינמי (Dynamic Inflation):
+     * עוברת על הערכות במאגר, מסננת לפי מילת החיפוש, ומייצרת View עבור כל ערכה.
+     * @param query מחרוזת החיפוש לסינון.
+     */
     private void populateStudySets(String query) {
         llStudySetsContainer.removeAllViews();
         List<StudySet> allSets = StudyRepository.getInstance().getAllStudySets();
         LayoutInflater inflater = LayoutInflater.from(this);
 
         for (StudySet set : allSets) {
+            // בדיקת התאמה לכותרת או לקטגוריה
             if (!query.isEmpty()) {
                 boolean matchesTitle = set.getTitle().toLowerCase().contains(query.toLowerCase());
                 boolean matchesCat = set.getCategory().toLowerCase().contains(query.toLowerCase());
@@ -280,6 +324,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
 
+            // ניפוח ה-Layout של כרטיס ערכת לימוד בודדת
             View cardView = inflater.inflate(R.layout.item_study_set, llStudySetsContainer, false);
 
             TextView tvCategoryBadge = cardView.findViewById(R.id.tvCategoryBadge);
@@ -294,7 +339,7 @@ public class MainActivity extends AppCompatActivity {
             tvSetSubtitle.setText(String.format("%d כרטיסיות • %s", set.getCardCount(), set.getUpdatedInfo()));
             pbMastery.setProgress(set.getMasteryPercentage());
 
-            // Style category chip and mastery bar based on category
+            // עיצוב תגית הקטגוריה ופס ההתקדמות לפי מקצוע הלימוד
             if ("כלכלה".equals(set.getCategory())) {
                 tvCategoryBadge.setBackgroundTintList(ContextCompat.getColorStateList(this, R.color.tag_economics));
                 tvCategoryBadge.setTextColor(ContextCompat.getColor(this, R.color.tag_economics_text));
@@ -312,7 +357,7 @@ public class MainActivity extends AppCompatActivity {
                 tvMastery.setTextColor(ContextCompat.getColor(this, R.color.primary));
             }
 
-            // Touch scale and click opens Flashcards for this specific set
+            // החלת אפקט לחיצה ומעבר למסך תרגול הכרטיסיות (FlashcardsActivity) עבור ערכה זו
             ViewAnimationUtils.applyTouchScaleEffect(cardView);
             cardView.setOnClickListener(v -> {
                 Intent intent = new Intent(this, FlashcardsActivity.class);
@@ -323,6 +368,7 @@ public class MainActivity extends AppCompatActivity {
             llStudySetsContainer.addView(cardView);
         }
 
+        // הצגת הודעה כאשר אין תוצאות מתאימות לחיפוש
         if (llStudySetsContainer.getChildCount() == 0) {
             TextView noResults = new TextView(this);
             noResults.setText("לא נמצאו ערכות התואמות לחיפוש.");
@@ -333,6 +379,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * פותחת דיאלוג מותאם ליצירת ערכת לימוד חדשה באופן ידני,
+     * הכולל שם ערכה, נושא, ושאלה ותשובה לכרטיסייה ראשונה.
+     */
     private void showCreateSetDialog() {
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);

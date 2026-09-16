@@ -56,14 +56,28 @@ import com.yalig.snapstudy.utils.ViewAnimationUtils;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * מסך ההתחברות וההרשמה (LoginActivity) של אפליקציית SnapStudy.
+ * מסך זה מאפשר כניסה למערכת בשתי דרכים מאובטחות:
+ * 1. הזנת כתובת אימייל וסיסמה (באמצעות Firebase Authentication) כולל הרשמה ואיפוס סיסמה.
+ * 2. התחברות מהירה בלחיצה אחת עם חשבון Google באמצעות ספריית ה-Credential Manager המודרנית.
+ * המסך מציג טופס אינטראקטיבי המתחלף בצורה מונפשת בין מצב כניסה (Sign In) למצב הרשמה (Sign Up).
+ */
 public class LoginActivity extends AppCompatActivity {
 
+    // תגית רישום לוגים לניפוי שגיאות
     private static final String TAG = "LoginActivity";
+
+    // מזהה הלקוח של Google Web Client ID לאימות OAuth מול Firebase
     private static final String WEB_CLIENT_ID = "32193446763-8v30jhv8h0plj9iffjcmt53rthf6f5he.apps.googleusercontent.com";
 
+    // מופע שירות האימות של Firebase
     private FirebaseAuth mAuth;
+
+    // מנהל הרשאות וחשבונות של Android (Credential Manager) עבור התחברות Google
     private CredentialManager credentialManager;
 
+    // רכיבי ממשק משתמש (Views)
     private MaterialCardView cardLogin;
     private TabLayout tabLayoutAuth;
     private View formFieldsContainer;
@@ -83,10 +97,12 @@ public class LoginActivity extends AppCompatActivity {
     private TextView tvSignUp;
     private TextView tvForgotPassword;
 
+    // משתנה מצב: האם הטופס נמצא כעת במצב הרשמה (true) או התחברות (false)
     private boolean isSignUpMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // החלת ערכת הנושא השמורה (בהיר/כהה)
         SnapStudyApp.applyThemeToActivity(this);
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
@@ -94,7 +110,7 @@ public class LoginActivity extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         credentialManager = CredentialManager.create(this);
 
-        // Auto login if already authenticated
+        // בדיקה האם המשתמש כבר מחובר למערכת מסשן קודם - אם כן, מעבר ישיר למסך הראשי
         if (mAuth.getCurrentUser() != null) {
             navigateToMain();
             return;
@@ -102,16 +118,22 @@ public class LoginActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_login);
 
+        // התאמת שולי המסך לפסי המערכת (Status Bar ו-Navigation Bar)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.loginRoot), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
         initViews();
         setupListeners();
+        // הגדרת מצב התחלתי: התחברות (ללא אנימציה)
         setAuthMode(false, false);
     }
 
+    /**
+     * קישור כל משתני המחלקה לרכיבי ה-XML המתאימים במסך.
+     */
     private void initViews() {
         cardLogin = findViewById(R.id.cardLogin);
         tabLayoutAuth = findViewById(R.id.tabLayoutAuth);
@@ -133,15 +155,19 @@ public class LoginActivity extends AppCompatActivity {
         tvForgotPassword = findViewById(R.id.tvForgotPassword);
     }
 
+    /**
+     * הגדרת מאזינים ללחיצות, אפקטי מגע ואירועי שינוי טאבים.
+     */
     private void setupListeners() {
         View btnGoogle = findViewById(R.id.btnGoogle);
 
+        // החלת אפקט לחיצה קפיצי על כל הכפתורים האינטראקטיביים
         ViewAnimationUtils.applyTouchScaleEffect(btnLogin);
         ViewAnimationUtils.applyTouchScaleEffect(btnGoogle);
         ViewAnimationUtils.applyTouchScaleEffect(tvSignUp);
         ViewAnimationUtils.applyTouchScaleEffect(tvForgotPassword);
 
-        // Tab selection listener
+        // מאזין למעבר בין טאב "התחברות" לטאב "הרשמה"
         tabLayoutAuth.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
@@ -158,7 +184,7 @@ public class LoginActivity extends AppCompatActivity {
             public void onTabReselected(TabLayout.Tab tab) {}
         });
 
-        // Toggle Sign In / Sign Up mode from footer text
+        // לחיצה על טקסט הקישור בתחתית המסך ("הרשם עכשיו" / "התחבר עכשיו")
         tvSignUp.setOnClickListener(v -> {
             boolean nextMode = !isSignUpMode;
             TabLayout.Tab targetTab = tabLayoutAuth.getTabAt(nextMode ? 1 : 0);
@@ -169,27 +195,33 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
-        // Email/Password Submit
+        // כפתור אישור כניסה / הרשמה בדוא"ל וסיסמה
         btnLogin.setOnClickListener(v -> handleEmailAuth());
 
-        // Google Sign-In
+        // כפתור התחברות עם חשבון Google
         findViewById(R.id.btnGoogle).setOnClickListener(v -> signInWithGoogle());
 
-        // Forgot Password
+        // כפתור "שכחת סיסמה?" לפתיחת דיאלוג איפוס
         tvForgotPassword.setOnClickListener(v -> handleForgotPassword());
     }
 
+    /**
+     * מעבר חלק בין מצב התחברות (Sign In) למצב הרשמה (Sign Up).
+     * כולל אנימציית גובה לכרטיס, תנועה אופקית עדינה לשדות ודעיכת טקסט הכותרת.
+     * @param isSignUp אמת אם עוברים למצב הרשמה, שקר אם להתחברות.
+     * @param animate האם לבצע את המעבר בליווי אנימציה.
+     */
     private void setAuthMode(boolean isSignUp, boolean animate) {
         if (this.isSignUpMode == isSignUp && !animate) return;
         this.isSignUpMode = isSignUp;
 
-        // Clear existing errors
+        // איפוס שגיאות קלט קודמות
         tilFullName.setError(null);
         tilEmail.setError(null);
         tilPassword.setError(null);
         tilConfirmPassword.setError(null);
 
-        // Keep TabLayout in sync
+        // סנכרון הטאב הנבחר ב-TabLayout
         int targetTabPos = isSignUp ? 1 : 0;
         if (tabLayoutAuth != null && tabLayoutAuth.getSelectedTabPosition() != targetTabPos) {
             TabLayout.Tab tab = tabLayoutAuth.getTabAt(targetTabPos);
@@ -198,14 +230,14 @@ public class LoginActivity extends AppCompatActivity {
             }
         }
 
-        // 2. Animated transition for form fields and card height
+        // ביצוע מעבר מונפש לרכיבי הטופס וגובה הכרטיס
         if (animate) {
             AutoTransition transition = new AutoTransition();
             transition.setDuration(260);
             transition.setInterpolator(new FastOutSlowInInterpolator());
             TransitionManager.beginDelayedTransition(cardLogin, transition);
 
-            // Subtle slide & fade to give a satisfying page-switch feel
+            // אנימציית החלקה ודעיכה לשדות הטופס
             float slideOffset = isSignUp ? -25f : 25f;
             formFieldsContainer.animate()
                     .alpha(0.15f)
@@ -223,7 +255,7 @@ public class LoginActivity extends AppCompatActivity {
                                 .start();
                     }).start();
 
-            // Smooth subtitle text crossfade
+            // אנימציית שינוי טקסט כותרת המשנה
             tvSubtitle.animate().alpha(0f).setDuration(100).withEndAction(() -> {
                 updateTextLabels(isSignUp);
                 tvSubtitle.animate().alpha(1f).setDuration(150).start();
@@ -234,12 +266,18 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * עדכון נראות השדות הרלוונטיים (שם מלא ואימות סיסמה מופיעים רק בהרשמה).
+     */
     private void updateFormVisibility(boolean isSignUp) {
         tilFullName.setVisibility(isSignUp ? View.VISIBLE : View.GONE);
         tilConfirmPassword.setVisibility(isSignUp ? View.VISIBLE : View.GONE);
         layoutRememberForgot.setVisibility(isSignUp ? View.GONE : View.VISIBLE);
     }
 
+    /**
+     * עדכון הטקסטים בכפתורים ובכותרות בהתאם למצב הנוכחי.
+     */
     private void updateTextLabels(boolean isSignUp) {
         if (isSignUp) {
             tvSubtitle.setText("צור חשבון חדש והתחל ללמוד");
@@ -256,6 +294,12 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * טיפול באימות משתמש באמצעות אימייל וסיסמה:
+     * 1. בדיקת תקינות הקלט (Validation) - אימייל תקין, אורך סיסמה, התאמת סיסמאות.
+     * 2. שליחת בקשת יצירת משתמש או התחברות ל-Firebase Auth.
+     * 3. עדכון שם המשתמש בפרופיל Firebase במידה ומדובר בהרשמה חדשה.
+     */
     private void handleEmailAuth() {
         String email = etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
         String password = etPassword.getText() != null ? etPassword.getText().toString().trim() : "";
@@ -264,6 +308,7 @@ public class LoginActivity extends AppCompatActivity {
             String fullName = etFullName.getText() != null ? etFullName.getText().toString().trim() : "";
             String confirmPassword = etConfirmPassword.getText() != null ? etConfirmPassword.getText().toString().trim() : "";
 
+            // בדיקת שם משתמש
             if (TextUtils.isEmpty(fullName)) {
                 tilFullName.setError("נא להזין שם משתמש");
                 etFullName.requestFocus();
@@ -272,6 +317,7 @@ public class LoginActivity extends AppCompatActivity {
                 tilFullName.setError(null);
             }
 
+            // בדיקת תקינות פורמט אימייל
             if (TextUtils.isEmpty(email) || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
                 tilEmail.setError("נא להזין כתובת אימייל תקינה");
                 etEmail.requestFocus();
@@ -280,6 +326,7 @@ public class LoginActivity extends AppCompatActivity {
                 tilEmail.setError(null);
             }
 
+            // בדיקת אורך סיסמה מינימלי
             if (TextUtils.isEmpty(password) || password.length() < 6) {
                 tilPassword.setError("סיסמה חייבת להכיל לפחות 6 תווים");
                 etPassword.requestFocus();
@@ -288,6 +335,7 @@ public class LoginActivity extends AppCompatActivity {
                 tilPassword.setError(null);
             }
 
+            // בדיקת התאמת סיסמה לאימות סיסמה
             if (!password.equals(confirmPassword)) {
                 tilConfirmPassword.setError("הסיסמאות אינן תואמות");
                 etConfirmPassword.requestFocus();
@@ -316,6 +364,7 @@ public class LoginActivity extends AppCompatActivity {
                         }
                     });
         } else {
+            // בדיקת קלט בהתחברות
             if (TextUtils.isEmpty(email)) {
                 tilEmail.setError("נא להזין כתובת אימייל");
                 etEmail.requestFocus();
@@ -347,6 +396,10 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * התחברות באמצעות חשבון Google תוך שימוש בספריית ה-Credential Manager של Android.
+     * ספרייה זו מחליפה את ה-Google Sign-In הישן ומספקת חוויית משתמש מאובטחת ובלחיצה אחת.
+     */
     private void signInWithGoogle() {
         GetSignInWithGoogleOption signInWithGoogleOption = new GetSignInWithGoogleOption.Builder(WEB_CLIENT_ID)
                 .build();
@@ -396,6 +449,10 @@ public class LoginActivity extends AppCompatActivity {
         );
     }
 
+    /**
+     * אימות ה-Token שהתקבל מחשבון Google מול שרת ה-Firebase Auth.
+     * @param idToken ה-Token המאומת של גוגל.
+     */
     private void firebaseAuthWithGoogle(String idToken) {
         AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
         mAuth.signInWithCredential(credential)
@@ -410,8 +467,10 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
-
-
+    /**
+     * פתיחת דיאלוג ייעודי לאיפוס סיסמה עבור משתמש ששכח את סיסמתו.
+     * הדיאלוג בודק תחילה האם המשתמש קיים והאם הוא מחובר באמצעות סיסמה או ספק חיצוני (כמו Google).
+     */
     private void handleForgotPassword() {
         String currentEmail = etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
 
@@ -467,6 +526,7 @@ public class LoginActivity extends AppCompatActivity {
                 btnPositive.setText("בודק...");
 
                 mAuth.useAppLanguage();
+                // בדיקת ספקי ההתחברות המשויכים לאימייל זה
                 mAuth.fetchSignInMethodsForEmail(email)
                         .addOnCompleteListener(task -> {
                             if (!dialog.isShowing()) return;
@@ -481,6 +541,7 @@ public class LoginActivity extends AppCompatActivity {
                                     return;
                                 }
 
+                                // אם החשבון נוצר באמצעות Google בלבד, אין לו סיסמה לאפס
                                 if (!methods.contains("password")) {
                                     btnPositive.setEnabled(true);
                                     btnPositive.setText("שלח קישור ✨");
@@ -513,6 +574,9 @@ public class LoginActivity extends AppCompatActivity {
         dialog.show();
     }
 
+    /**
+     * שליחה ישירה של הודעת הדוא"ל לאיפוס סיסמה באמצעות Firebase Authentication.
+     */
     private void sendResetEmailDirectly(AlertDialog dialog, Button btnPositive, TextInputLayout tilResetEmail, TextInputEditText etResetEmail, String email) {
         mAuth.sendPasswordResetEmail(email)
                 .addOnCompleteListener(task -> {
@@ -547,6 +611,9 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * מעבר למסך הראשי של האפליקציה וניקוי מחסנית המסכים (Clear Task).
+     */
     private void navigateToMain() {
         Intent intent = new Intent(this, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -554,4 +621,5 @@ public class LoginActivity extends AppCompatActivity {
         finish();
     }
 }
+
 
