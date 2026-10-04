@@ -1,0 +1,82 @@
+@startuml SnapStudy_UseCaseDiagram
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam arrowColor #1E88E5
+skinparam actorBorderColor #0D47A1
+skinparam actorBackgroundColor #E3F2FD
+skinparam usecaseBorderColor #1976D2
+skinparam usecaseBackgroundColor #F5F9FF
+
+left to right direction
+
+actor "תלמיד / לומד\n(Primary Actor)" as Student
+actor "Google Gemini API\n(Secondary Actor)" as GeminiAI <<Service>>
+actor "Firebase Platform\n(Auth & Firestore)" as Firebase <<Service>>
+actor "Google ML Kit\n(On-Device Vision)" as MLKit <<System>>
+
+rectangle "מערכת SnapStudy (אפליקציית אנדרואיד)" {
+    
+    package "אימות ומשתמשים" {
+        usecase "הרשמה והתחברות למערכת" as UC_Auth
+        usecase "התחברות מהירה עם Google" as UC_GoogleAuth
+        usecase "איפוס ושחזור סיסמה" as UC_ResetPassword
+    }
+    
+    package "סריקה ועיבוד AI" {
+        usecase "סריקת מסמך / מחברת במצלמה" as UC_Scan
+        usecase "זיהוי טקסט בזמן אמת בפריים" as UC_MLDetect
+        usecase "ייבוא תמונת סיכום מגלריה" as UC_Gallery
+        usecase "יצירת כרטיסיות אוטומטית ע''י AI" as UC_GenerateAI
+        usecase "פענוח JSON והפקת שאלות ותשובות" as UC_ParseAI
+    }
+    
+    package "ניהול ערכות לימוד" {
+        usecase "צפייה בלוח בקרה וחיפוש סטים" as UC_Dashboard
+        usecase "יצירה ועריכה ידנית של ערכה" as UC_ManualSet
+        usecase "סנכרון נתונים וגיבוי בענן" as UC_SyncCloud
+    }
+    
+    package "תרגול והתאמה אישית" {
+        usecase "תרגול כרטיסיות (Active Recall)" as UC_Practice
+        usecase "דירוג קושי וחישוב חזרות מרווחות" as UC_SpacedRep
+        usecase "התאמת הגדרות אישיות (עיצוב, תזכורות)" as UC_Settings
+        usecase "מעקב רצף Streak ויעדים יומיים" as UC_Streak
+    }
+}
+
+' קשרים של התלמיד
+Student --> UC_Auth
+Student --> UC_Dashboard
+Student --> UC_Scan
+Student --> UC_ManualSet
+Student --> UC_Practice
+Student --> UC_Settings
+
+' יחסי Include & Extend באימות
+UC_Auth <.. UC_GoogleAuth : <<extend>>
+UC_Auth <.. UC_ResetPassword : <<extend>>
+UC_Auth ..> Firebase : מאמת מול
+
+' יחסי סריקה ו-AI
+UC_Scan ..> UC_MLDetect : <<include>>
+UC_Scan <.. UC_Gallery : <<extend>>
+UC_Scan ..> UC_GenerateAI : מפעיל בעת לכידה
+UC_GenerateAI ..> UC_ParseAI : <<include>>
+
+UC_MLDetect ..> MLKit : מעבד על המכשיר
+UC_GenerateAI ..> GeminiAI : שולח תמונה ב-REST
+UC_GenerateAI ..> UC_SyncCloud : שומר ערכה
+
+' תרגול ומעקב
+UC_Practice ..> UC_SpacedRep : <<include>>
+UC_Practice ..> UC_Streak : מעדכן התקדמות
+UC_Dashboard ..> UC_Streak : מציג סטטיסטיקות
+UC_Dashboard ..> UC_SyncCloud : טוען נתונים
+
+' ענן
+UC_SyncCloud ..> Firebase : מסנכרן Firestore
+UC_Settings ..> Firebase : שומר העדפות משתמש
+
+@enduml
