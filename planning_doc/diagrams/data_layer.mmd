@@ -1,0 +1,50 @@
+classDiagram
+  direction LR
+  class StudyRepository {
+    <<singleton>>
+    -StudyRepository instance$
+    -FirebaseFirestore db
+    -List~StudySet~ studySets
+    -int streakDays
+    -int cardsStudiedToday
+    -int dailyGoal
+    -int focusMinutes
+    +getInstance()$ StudyRepository
+    +loadLocalData(String uid) void
+    +saveLocalData(String uid) void
+    +syncWithFirestore(DataCallback cb) void
+    +getAllStudySets() List~StudySet~
+    +getStudySetById(String id) StudySet
+    +addStudySet(StudySet set) void
+    +updateStudySet(StudySet set) void
+    +setDailyGoal(int goal) void
+    +recordCardStudied() void
+    +clearData() void
+  }
+  class DataCallback {
+    <<interface>>
+    +onComplete() void
+  }
+  class StudySet {
+    -String id
+    -String title
+    -String category
+    -String updatedInfo
+    -int masteryPercentage
+    -List~Flashcard~ flashcards
+    +getCardCount() int
+    +addFlashcard(Flashcard card) void
+  }
+  class Flashcard {
+    -String id
+    -String question
+    -String answer
+    -String topic
+    -int intervalDays
+    -int repetitionCount
+    -int difficulty
+    +incrementRepetition() void
+  }
+  StudyRepository "1" o-- "0..*" StudySet : manages
+  StudySet "1" *-- "0..*" Flashcard : contains
+  StudyRepository ..> DataCallback : notifies

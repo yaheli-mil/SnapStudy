@@ -1,0 +1,56 @@
+classDiagram
+  direction TB
+  class AppCompatActivity
+  class LoginActivity {
+    -FirebaseAuth mAuth
+    -CredentialManager credentialManager
+    -boolean isSignUpMode
+    -handleEmailAuth() void
+    -signInWithGoogle() void
+    -handleForgotPassword() void
+    -navigateToMain() void
+  }
+  class MainActivity {
+    -EditText etSearch
+    -String currentSearch
+    -refreshMetrics() void
+    -populateStudySets(String query) void
+    -showCreateSetDialog() void
+  }
+  class ScannerActivity {
+    -PreviewView cameraPreview
+    -TextRecognizer textRecognizer
+    -DocumentOverlayView documentOverlayView
+    -boolean isAutoMode
+    -startCamera() void
+    -analyzeImageForDocument(ImageProxy img) void
+    -takePhotoAndProcess() void
+    -processImageWithAi(Bitmap bmp) void
+  }
+  class FlashcardsActivity {
+    -StudySet studySet
+    -int currentIndex
+    -boolean isAnswerRevealed
+    -displayCurrentCard() void
+    -revealAnswer() void
+    -onRatingSelected(int difficulty, String msg) void
+    -showDeckCompletedDialog() void
+  }
+  class SettingsActivity {
+    -updateThemeButtonsUI(int mode) void
+    -showTimePickerDialog(TextView tv) void
+    -showEditDailyGoalDialog(TextView badge) void
+  }
+  class StudyRepository {
+    <<singleton>>
+    +getInstance()$ StudyRepository
+  }
+  AppCompatActivity <|-- LoginActivity
+  AppCompatActivity <|-- MainActivity
+  AppCompatActivity <|-- ScannerActivity
+  AppCompatActivity <|-- FlashcardsActivity
+  AppCompatActivity <|-- SettingsActivity
+  MainActivity ..> StudyRepository : uses
+  ScannerActivity ..> StudyRepository : uses
+  FlashcardsActivity ..> StudyRepository : uses
+  SettingsActivity ..> StudyRepository : uses

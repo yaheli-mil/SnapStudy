@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>SnapStudy – תכנון הפרויקט</title>
+<style>
+  @page {
+    size: A4;
+    margin: 15mm 16mm 17mm;
+    @bottom-center { content: counter(page); font: 9pt "Segoe UI", Arial, sans-serif; color: #64748b; }
+  }
+  @page wide {
+    size: A4 landscape;
+    margin: 11mm 12mm 13mm;
+    @bottom-center { content: counter(page); font: 9pt "Segoe UI", Arial, sans-serif; color: #64748b; }
+  }
+  :root {
+    --blue: #1d4ed8; --blue-dark: #0037b0; --blue-soft: #eef2ff; --line: #cbd5e1;
+    --ink: #111827; --muted: #64748b; --green: #15803d;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    margin: 0; direction: rtl; color: var(--ink); background: #fff;
+    font-family: "Segoe UI", Arial, sans-serif; font-size: 10.5pt; line-height: 1.6;
+  }
+  .ltr { direction: ltr; unicode-bidi: isolate; }
+  code {
+    font-family: Consolas, "Courier New", monospace; font-size: 0.9em;
+    direction: ltr; unicode-bidi: isolate; background: #f1f5f9; padding: 0 3px; border-radius: 3px; white-space: nowrap;
+  }
+
+  /* ---------- title block ---------- */
+  .title { text-align: center; margin-bottom: 10px; }
+  .title h1 { font-size: 30pt; margin: 0; line-height: 1.1; color: var(--blue-dark); letter-spacing: 0.5px; }
+  .title .sub { font-size: 14pt; margin: 4px 0 2px; }
+  .title .sub b { font-weight: 800; }
+  .title .meta { color: #334155; font-size: 10pt; }
+  .info {
+    border: 1.5px solid #93a8f0; background: #f5f7ff; border-radius: 8px;
+    padding: 10px 18px; margin: 12px 0 6px;
+    display: grid; grid-template-columns: 30mm 1fr; row-gap: 2px;
+  }
+  .info dt { font-weight: 700; }
+  .info dd { margin: 0; }
+
+  /* ---------- headings ---------- */
+  h2 {
+    font-size: 15pt; margin: 22px 0 10px; padding-bottom: 6px;
+    border-bottom: 2px solid #0f172a; break-after: avoid;
+  }
+  h3 { font-size: 11.5pt; margin: 16px 0 6px; break-after: avoid; }
+  p { margin: 0 0 8px; }
+
+  /* ---------- tables ---------- */
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; font-size: 9.5pt; line-height: 1.45; }
+  th, td { border: 1px solid var(--line); padding: 4px 7px; text-align: start; vertical-align: top; }
+  thead th { background: var(--blue); color: #fff; font-weight: 700; border-color: var(--blue); }
+  tbody tr:nth-child(even) td { background: #f8fafc; }
+  tr { break-inside: avoid; }
+  td.c, th.c { text-align: center; }
+  .done { color: var(--green); font-weight: 700; }
+  .now { color: var(--blue-dark); font-weight: 700; }
+  tr.phase td { background: var(--blue-soft) !important; font-weight: 700; color: #1e3a8a; font-size: 9pt; }
+  tr.total td { background: #dbe4ff !important; font-weight: 800; }
+  tr.later td { color: #8a94a6; }
+  tr.later td .tag { border-color: #cbd5e1; color: #8a94a6; }
+  .tag {
+    display: inline-block; font-family: Consolas, monospace; font-size: 8.5pt; direction: ltr;
+    border: 1px solid #a5b4fc; border-radius: 4px; padding: 0 4px; color: #3730a3; background: #fff;
+  }
+  .note { color: #475569; font-size: 9.5pt; }
+
+  /* ---------- issue card ---------- */
+  .issue { border: 1px solid #94a3b8; border-radius: 6px; padding: 10px 14px; margin: 8px 0 4px; break-inside: avoid; }
+  .issue .head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+  .issue .head b { font-size: 11pt; }
+  .issue .head span { color: #475569; font-size: 9.5pt; white-space: nowrap; }
+  .issue ul { list-style: none; padding: 0; margin: 2px 0 6px; }
+  .issue li { padding-inline-start: 20px; position: relative; }
+  .issue li::before {
+    content: ""; position: absolute; inset-inline-start: 2px; top: 6px;
+    width: 9px; height: 9px; border: 1.3px solid #334155; border-radius: 2px;
+  }
+
+  /* ---------- two-column 80% table ---------- */
+  table.split td { width: 50%; }
+  table.split ul { margin: 0; padding-inline-start: 16px; }
+  table.split thead th { background: var(--blue-soft); color: #1e3a8a; border-color: var(--line); }
+
+  /* ---------- figures ---------- */
+  figure { margin: 8px 0; text-align: center; break-inside: avoid; }
+  figure img { max-width: 100%; height: auto; }
+  ul.rel { padding-inline-start: 18px; margin: 6px 0; }
+  ul.rel li { margin-bottom: 3px; }
+
+  .wide { page: wide; }
+  .wide h2 { margin-top: 0; }
+  .newpage { break-before: page; }
+  .flow-legend { display: flex; gap: 6px 18px; justify-content: center; flex-wrap: wrap; font-size: 8.8pt; line-height: 1.4; color: #334155; margin-top: 2px; }
+  .flow-legend span::before { content: "■ "; color: var(--blue); }
+</style>
+</head>
+<body>
+
+<!-- ======================= עמוד שער ======================= -->
+<div class="title">
+  <h1>SnapStudy</h1>
+  <div class="sub">תכנון הפרויקט: <b>תכנית זמנים, Issues, תרשים מחלקות ותרשים זרימת מסכים</b></div>
+  <div class="meta">מגמת הנדסת תוכנה | יב' | שאלון 883589</div>
+</div>
+
+<dl class="info">
+  <dt>שם התלמיד:</dt><dd>יהלי מילרמן</dd>
+  <dt>שם האפליקציה:</dt><dd>SnapStudy – כרטיסיות לימוד שנוצרות מצילום של דף, בעזרת AI</dd>
+  <dt>מנחה:</dt><dd>נועם לסנר</dd>
+  <dt>מאגר קוד:</dt><dd><span class="ltr">github.com/yaheli-mil/SnapStudy</span></dd>
+  <dt>תאריך הגשה:</dt><dd>18.10.2026</dd>
+</dl>
+
+<!-- ======================= 1 ======================= -->
+<h2>1. תיאור האפליקציה בקצרה</h2>
+<p>
+  הכנת כרטיסיות שינון לוקחת הרבה זמן: עוברים על הסיכום, מנסחים שאלות ומקלידים אותן אחת-אחת, ובסוף נשאר מעט זמן לתרגל.
+  SnapStudy חוסכת את השלב הזה. מצלמים דף ממחברת או מספר (או בוחרים תמונה מהגלריה), האפליקציה שולחת את התמונה ל-Gemini
+  ומקבלת בחזרה ערכה של שאלות ותשובות. אחר כך מתרגלים עם כרטיסיות שמתהפכות, מדרגים כמה כל שאלה הייתה קשה,
+  והאפליקציה עוקבת אחרי רצף ימי הלימוד והיעד היומי. הערכות נשמרות בטלפון ובענן (Firebase), כך שהן מחכות בכל התחברות.
+  <b>קהל יעד:</b> תלמידי תיכון וסטודנטים שמתכוננים למבחנים.
+</p>
+
+<!-- ======================= 2 ======================= -->
+<h2>2. רשימת המשימות (GitHub Issues)</h2>
+<p>
+  Issues <span class="ltr">#1–#8</span> כבר פתוחים במאגר. השלבים הגדולים מ-<code>WORKPLAN.md</code> (<span class="ltr">#5–#8</span>) מפורקים כאן
+  ל-Issues קטנים של 2–5 שעות, כדי שאפשר יהיה לסגור כל אחד מהם בשבוע-שבועיים. הערכת הזמן היא בשעות עבודה (כיתה + בית).
+</p>
+
+<table>
+  <thead>
+    <tr><th class="c" style="width:7%">#</th><th>כותרת ה-Issue</th><th class="c" style="width:9%">שלב</th><th class="c" style="width:11%">תווית</th><th class="c" style="width:8%">הערכה</th><th class="c" style="width:8%">מצב</th></tr>
+  </thead>
+  <tbody>
+    <tr class="phase"><td colspan="6">שלב 1 – עיצוב ושלד האפליקציה</td></tr>
+    <tr><td class="c">1</td><td>עיצוב מסכי הליבה ב-Stitch: כניסה, לוח בקרה, סורק</td><td class="c">–</td><td class="c"><span class="tag">design</span></td><td class="c">4</td><td class="c done">סגור</td></tr>
+    <tr><td class="c">2</td><td>השלמת מסכי התרגול וההגדרות ב-Stitch ותרשים מעברים</td><td class="c">–</td><td class="c"><span class="tag">design</span></td><td class="c">3</td><td class="c done">סגור</td></tr>
+    <tr><td class="c">3</td><td>שלד האפליקציה: 5 Activities, קובצי Layout וניווט בין המסכים עם Intents</td><td class="c">–</td><td class="c"><span class="tag">setup</span></td><td class="c">5</td><td class="c done">סגור</td></tr>
+
+    <tr class="phase"><td colspan="6">שלב 2 – משתמשים ונתונים (Issue #5)</td></tr>
+    <tr><td class="c">9</td><td>הרשמה והתחברות עם אימייל וסיסמה, כולל שחזור סיסמה</td><td class="c">#5</td><td class="c"><span class="tag">firebase</span></td><td class="c">3</td><td class="c">פתוח</td></tr>
+    <tr><td class="c">10</td><td>התחברות עם Google דרך Credential Manager</td><td class="c">#5</td><td class="c"><span class="tag">firebase</span></td><td class="c">3</td><td class="c">פתוח</td></tr>
+    <tr><td class="c">11</td><td>מחלקות המודל: StudySet ו-Flashcard</td><td class="c">#5</td><td class="c"><span class="tag">model</span></td><td class="c">2</td><td class="c">פתוח</td></tr>
+    <tr><td class="c">12</td><td>StudyRepository: מחלקת Singleton ושמירה מקומית ב-SharedPreferences (JSON)</td><td class="c">#5</td><td class="c"><span class="tag">model</span></td><td class="c">3</td><td class="c">פתוח</td></tr>
+    <tr><td class="c">13</td><td>סנכרון הערכות מול Firestore וכתיבת <code>firestore.rules</code></td><td class="c">#5</td><td class="c"><span class="tag">firebase</span></td><td class="c">4</td><td class="c">פתוח</td></tr>
+
+    <tr class="phase"><td colspan="6">שלב 3 – מצלמה ו-AI (Issue #6)</td></tr>
+    <tr><td class="c">14</td><td>מסך הסורק: CameraX, בקשת הרשאת מצלמה ובחירת תמונה מהגלריה</td><td class="c">#6</td><td class="c"><span class="tag">camera</span></td><td class="c">4</td><td class="c">פתוח</td></tr>
+    <tr><td class="c">15</td><td>זיהוי טקסט עם ML Kit וציור המסגרת סביב הדף ב-DocumentOverlayView</td><td class="c">#6</td><td class="c"><span class="tag">camera</span></td><td class="c">5</td><td class="c">פתוח</td></tr>
+    <tr><td class="c">16</td><td>צילום אוטומטי אחרי 1.1 שניות של יציבות, מצב ידני ופלאש</td><td class="c">#6</td><td class="c"><span class="tag">camera</span></td><td class="c">3</td><td class="c">פתוח</td></tr>
+    <tr><td class="c">17</td><td>GeminiStudyService: שליחת התמונה ל-Gemini ופענוח תשובת ה-JSON</td><td class="c">#6</td><td class="c"><span class="tag">ai</span></td><td class="c">5</td><td class="c">פתוח</td></tr>
+    <tr><td class="c">18</td><td>שמירת הערכה שנוצרה, חיווי טעינה, הודעת שגיאה ומעבר לתרגול</td><td class="c">#6</td><td class="c"><span class="tag">ai</span></td><td class="c">3</td><td class="c">פתוח</td></tr>
+
+    <tr class="phase"><td colspan="6">שלב 4 – תרגול, לוח בקרה והגדרות (Issue #7)</td></tr>
+    <tr><td class="c">19</td><td>מסך התרגול: כרטיסייה מתהפכת (3D Flip) וסרגל התקדמות</td><td class="c">#7</td><td class="c"><span class="tag">ui</span></td><td class="c">4</td><td class="c">פתוח</td></tr>
+    <tr><td class="c">20</td><td>דירוג קושי (שוב / קשה / טוב / קל) ועדכון מרווחי החזרה</td><td class="c">#7</td><td class="c"><span class="tag">feature</span></td><td class="c">2</td><td class="c">פתוח</td></tr>
+    <tr><td class="c">21</td><td>לוח הבקרה: רשימת הערכות, חיפוש ויצירת ערכה ידנית</td><td class="c">#7</td><td class="c"><span class="tag">ui</span></td><td class="c">4</td><td class="c">פתוח</td></tr>
+    <tr><td class="c">22</td><td>רצף ימי למידה (Streak) ויעד כרטיסיות יומי</td><td class="c">#7</td><td class="c"><span class="tag">feature</span></td><td class="c">3</td><td class="c">פתוח</td></tr>
+    <tr><td class="c">23</td><td>מסך ההגדרות: ערכת נושא, יעד יומי, שעת תזכורת, צלילים והתנתקות</td><td class="c">#7</td><td class="c"><span class="tag">ui</span></td><td class="c">3</td><td class="c">פתוח</td></tr>
+
+    <tr class="phase"><td colspan="6">שלב 5 – ספר הפרויקט ובדיקות (Issue #8)</td></tr>
+    <tr><td class="c">24</td><td>ספר הפרויקט: פרק הארכיטקטורה ותרשים המחלקות</td><td class="c">#8</td><td class="c"><span class="tag">docs</span></td><td class="c">3</td><td class="c">פתוח</td></tr>
+    <tr><td class="c">25</td><td>ספר הפרויקט: תרשים זרימת המסכים ומדריך למשתמש</td><td class="c">#8</td><td class="c"><span class="tag">docs</span></td><td class="c">3</td><td class="c">פתוח</td></tr>
+    <tr><td class="c">26</td><td>בדיקות: בלי רשת, בלי הרשאת מצלמה, צילום מטושטש, ותיקון הבאגים שנמצאו</td><td class="c">#8</td><td class="c"><span class="tag">qa</span></td><td class="c">4</td><td class="c">פתוח</td></tr>
+
+    <tr class="total"><td></td><td>סה"כ עד אבן הדרך של 80%</td><td></td><td></td><td class="c">73</td><td></td></tr>
+
+    <tr class="later"><td class="c">27</td><td>התראה יומית בשעת התזכורת שנבחרה בהגדרות (Notifications)</td><td class="c">–</td><td class="c"><span class="tag">after-80</span></td><td class="c">4</td><td class="c">פתוח</td></tr>
+    <tr class="later"><td class="c">28</td><td>עריכה ומחיקה של כרטיסיות וערכות, כולל שינוי שם לערכה</td><td class="c">–</td><td class="c"><span class="tag">after-80</span></td><td class="c">4</td><td class="c">פתוח</td></tr>
+    <tr class="later"><td class="c">29</td><td>ערכה אחת מכמה דפים (צילום כמה עמודים ברצף)</td><td class="c">–</td><td class="c"><span class="tag">after-80</span></td><td class="c">5</td><td class="c">פתוח</td></tr>
+    <tr class="later"><td class="c">30</td><td>מצגת וסרטון הדגמה לבחינת הבגרות</td><td class="c">–</td><td class="c"><span class="tag">after-80</span></td><td class="c">4</td><td class="c">פתוח</td></tr>
+  </tbody>
+</table>
+<p class="note">
+  Issue #4 הוא אבן הדרך עצמה (הגשת 80% ב-1.1.2027), ויש לו Milestone במאגר שכל ה-Issues של שלבים 2–5 משויכים אליו.
+  המשימות האפורות מתוכננות לאחרי ההגשה.
+</p>
+
+<h3>דוגמה ל-Issue מלא (#17)</h3>
+<div class="issue">
+  <div class="head">
+    <b>#17 GeminiStudyService: שליחת התמונה ל-Gemini ופענוח תשובת ה-JSON</b>
+    <span>תווית: ai | אבן דרך: 80% | הערכה: 5 שעות</span>
+  </div>
+  <p style="margin:4px 0"><b>סיפור משתמש:</b> בתור תלמיד, אני רוצה שאחרי שצילמתי דף מהמחברת האפליקציה תכין לבד שאלות ותשובות מהחומר,
+    כדי שלא אצטרך להקליד כרטיסיות בעצמי.</p>
+  <b>הגדרת "גמור":</b>
+  <ul>
+    <li>התמונה מוקטנת כך שהצלע הארוכה היא עד 1280 פיקסלים, ונשלחת כ-JPEG בקידוד Base64 למודל <code>gemini-2.5-flash</code>.</li>
+    <li>בבקשה מוגדר <code>response_mime_type: application/json</code>, והתשובה מפוענחת ל-StudySet עם כותרת ורשימת Flashcard.</li>
+    <li>הבקשה נשלחת ברקע עם OkHttp, והתוצאה חוזרת למסך דרך AiStudyCallback (onSuccess או onError) ב-Main Thread.</li>
+    <li>כשאין רשת או שהתשובה לא תקינה מוצגת הודעת שגיאה עם כפתור "נסה שוב", והאפליקציה לא קורסת.</li>
+    <li>נבדק על שלושה סוגי דפים: מחברת בכתב יד, דף מודפס ותמונה מהגלריה.</li>
+  </ul>
+  <b>תלוי ב:</b> #11, #14
+</div>
+
+<!-- ======================= 3 ======================= -->
+<h2>3. תכנית זמנים שבועית עד הגשת 80% (1.1.2027)</h2>
+<p>זמן עבודה מתוכנן: כ-6 שעות בשבוע (שעות המגמה + בית). השבועות מתחילים ביום ראשון, והשלבים תואמים ל-<code>WORKPLAN.md</code>.</p>
+
+<table>
+  <thead>
+    <tr><th class="c" style="width:7%">שבוע</th><th class="c" style="width:14%">תאריכים</th><th>Issues לשבוע</th><th class="c" style="width:7%">שעות</th><th class="c" style="width:19%">מצב / הערות</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="c">1</td><td class="c">4.10–10.10</td><td>#1, #2 עיצוב המסכים ב-Stitch</td><td class="c">7</td><td class="c done">הושלם</td></tr>
+    <tr><td class="c">2</td><td class="c">11.10–17.10</td><td>#3 שלד האפליקציה וניווט בין המסכים</td><td class="c">5</td><td class="c done">הושלם</td></tr>
+    <tr><td class="c">3</td><td class="c">18.10–24.10</td><td>#9 התחברות באימייל וסיסמה, #10 התחברות עם Google</td><td class="c">6</td><td class="c now">השבוע</td></tr>
+    <tr><td class="c">4</td><td class="c">25.10–31.10</td><td>#11 מחלקות המודל, #12 StudyRepository ושמירה מקומית, #13 Firestore (התחלה)</td><td class="c">7</td><td class="c"></td></tr>
+    <tr><td class="c">5</td><td class="c">1.11–7.11</td><td>#13 (סיום), #14 מסך הסורק ו-CameraX</td><td class="c">6</td><td class="c"></td></tr>
+    <tr><td class="c">6</td><td class="c">8.11–14.11</td><td>#15 זיהוי טקסט ב-ML Kit, #16 צילום אוטומטי (התחלה)</td><td class="c">6</td><td class="c"></td></tr>
+    <tr><td class="c">7</td><td class="c">15.11–21.11</td><td>#16 (סיום), #17 חיבור ל-Gemini</td><td class="c">7</td><td class="c">הכי מסובך</td></tr>
+    <tr><td class="c">8</td><td class="c">22.11–28.11</td><td>#18 שמירת הערכה ומעבר לתרגול, #19 מסך התרגול (התחלה)</td><td class="c">6</td><td class="c"></td></tr>
+    <tr><td class="c">9</td><td class="c">29.11–5.12</td><td>#19 (סיום), #20 דירוג קושי, #21 לוח הבקרה (התחלה)</td><td class="c">6</td><td class="c"></td></tr>
+    <tr><td class="c">10</td><td class="c">6.12–12.12</td><td>#21 (סיום), #22 Streak ויעד יומי</td><td class="c">4</td><td class="c">חנוכה – שבוע קל</td></tr>
+    <tr><td class="c">11</td><td class="c">13.12–19.12</td><td>#23 מסך ההגדרות, #24 ספר: פרק ארכיטקטורה</td><td class="c">6</td><td class="c"></td></tr>
+    <tr><td class="c">12</td><td class="c">20.12–26.12</td><td>#25 ספר: תרשים מסכים ומדריך למשתמש, #26 בדיקות (התחלה)</td><td class="c">6</td><td class="c"></td></tr>
+    <tr class="total"><td class="c">13</td><td class="c">27.12–1.1</td><td>#26 (סיום) + 3 שעות רזרבה</td><td class="c">4</td><td class="c">הגשת 80%</td></tr>
+  </tbody>
+</table>
+<p class="note">
+  כל Issue מהטבלה הקודמת מופיע כאן, וסכום השעות זהה: 73 + 3 רזרבה = 76. החיבור ל-Gemini (#17) הוא המשימה הכי מסובכת ולכן קיבל שבוע כמעט מלא,
+  ושבוע חנוכה מתוכנן קל יותר. עמודת "מצב" מתעדכנת כל שבוע.
+</p>
+
+<h3>הגדרת אבן הדרך של 80%</h3>
+<table class="split">
+  <thead><tr><th>עובד ב-1.1.2027 (נכלל ב-80%)</th><th>לא נכלל – מתוכנן לינואר עד מרץ</th></tr></thead>
+  <tbody><tr>
+    <td><ul>
+      <li>הרשמה והתחברות (אימייל וסיסמה, Google), כולל שחזור סיסמה</li>
+      <li>צילום דף או בחירה מהגלריה, עם זיהוי הדף וצילום אוטומטי</li>
+      <li>יצירת ערכת כרטיסיות מהתמונה בעזרת Gemini</li>
+      <li>שמירת הערכות בטלפון וב-Firestore, וטעינה מחדש אחרי התחברות</li>
+      <li>תרגול עם כרטיסייה מתהפכת ודירוג קושי</li>
+      <li>לוח בקרה עם חיפוש, Streak ויעד יומי</li>
+      <li>מסך הגדרות: ערכת נושא, יעד יומי, שעת תזכורת, צלילים</li>
+      <li>פרק ארכיטקטורה ותרשים זרימת מסכים בספר הפרויקט</li>
+    </ul></td>
+    <td><ul>
+      <li>התראה יומית בשעת התזכורת (#27)</li>
+      <li>עריכה ומחיקה של כרטיסיות וערכות (#28)</li>
+      <li>ערכה אחת מכמה דפים (#29)</li>
+      <li>מצגת וסרטון הדגמה לבגרות (#30)</li>
+      <li>תיקונים לפי המשוב על הגשת ה-80%</li>
+    </ul></td>
+  </tr></tbody>
+</table>
+
+<!-- ======================= 4 ======================= -->
+<h2>4. תרשים מחלקות</h2>
+<p>
+  התרשים בנוי לפי הקוד בחבילה <code>com.yalig.snapstudy</code>. בנאים, getters ו-setters לא מופיעים כדי שהתרשים יישאר קריא.
+  סימונים: <code>-</code> פרטי, <code>+</code> ציבורי, <code>#</code> מוגן, קו תחתון = static.
+</p>
+
+<h3>4.1 שכבת הנתונים (המודל) – המחלקות שמחזיקות את המידע שנשמר בטלפון וב-Firestore</h3>
+<figure><img src="diagrams/data_layer.svg" style="width:100%" alt="תרשים מחלקות – שכבת הנתונים"></figure>
+<ul class="rel">
+  <li><b>StudyRepository ו-StudySet (צבירה, <span class="ltr">1</span> ל-<span class="ltr">0..*</span>):</b> המאגר מחזיק את כל הערכות של המשתמש המחובר.
+    הוא Singleton – יש ממנו עותק אחד באפליקציה (<code>getInstance()</code>), וכל המסכים עובדים מולו.</li>
+  <li><b>StudySet ו-Flashcard (הכלה, <span class="ltr">1</span> ל-<span class="ltr">0..*</span>):</b> כל ערכה מכילה רשימת כרטיסיות. כרטיסייה לא קיימת בלי הערכה שלה,
+    וב-Firestore היא נשמרת בתוך מסמך הערכה: <code>users/{uid}/study_sets/{setId}</code>.</li>
+  <li><b>DataCallback:</b> ממשק קטן שדרכו StudyRepository מודיע למסך שהסנכרון מול Firestore הסתיים.</li>
+</ul>
+
+<section class="wide">
+  <h3 style="margin-top:0">4.2 שכבת התצוגה – המסכים (Activities)</h3>
+  <figure><img src="diagrams/view_layer.svg" style="width:100%" alt="תרשים מחלקות – המסכים"></figure>
+  <ul class="rel">
+    <li>כל המסכים יורשים מ-AppCompatActivity (משולש ריק, החץ מהבן אל האב). מחלקת האב מצוירת עם שם בלבד.</li>
+    <li>LoginActivity עובד ישירות מול FirebaseAuth ולא צריך את המאגר. ארבעת המסכים האחרים לא ניגשים ל-Firestore בעצמם – הם עוברים דרך StudyRepository,
+      כך שכל קוד השמירה והסנכרון נמצא במקום אחד.</li>
+    <li>לכל מסך בתרשים זרימת המסכים (פרק 5) יש מחלקה כאן, והדיאלוגים הם חלק מה-Activity שפותח אותם.</li>
+  </ul>
+</section>
+
+<section class="wide">
+  <h3 style="margin-top:0">4.3 שירותים ומחלקות עזר – מצלמה, AI והגדרות האפליקציה</h3>
+  <figure><img src="diagrams/services.svg" style="width:96%" alt="תרשים מחלקות – שירותים"></figure>
+  <ul class="rel">
+    <li><b>ScannerActivity מכיל DocumentOverlayView (הכלה):</b> תצוגה שיורשת מ-View ומציירת ב-<code>onDraw()</code> את המסגרת סביב הדף ש-ML Kit זיהה.</li>
+    <li><b>ScannerActivity ו-GeminiStudyService:</b> הסורק שולח את התמונה לשירות, והתשובה חוזרת דרך הממשק AiStudyCallback – <code>onSuccess</code> עם StudySet חדש או <code>onError</code> עם הודעה למשתמש.</li>
+    <li>GeminiConfig מחזיק את מפתח ה-API, ו-SnapStudyApp (יורש מ-Application) טוען את ערכת הנושא וההגדרות כשהאפליקציה עולה.</li>
+    <li>ViewAnimationUtils (אנימציות של מעבר ולחיצה) לא מופיעה בתרשים: זו מחלקת עזר עם פעולות static שכל המסכים משתמשים בהן.</li>
+  </ul>
+</section>
+
+<!-- ======================= 5 ======================= -->
+<section class="wide">
+  <h2>5. תרשים זרימת מסכים</h2>
+  <figure style="margin:0"><img src="diagrams/screen_flow.svg" style="max-height:150mm; width:auto" alt="תרשים זרימת מסכים"></figure>
+  <div class="flow-legend">
+    <span>המסכים עוצבו ב-Google Stitch (במקום Figma); כל מסך ממוספר ומופיע עם שם ה-Activity שלו</span>
+    <span>דיאלוג מסומן באות (1א, 2א...)</span>
+    <span>חץ = מעבר, התווית היא הפעולה שגורמת לו</span>
+    <span>מסגרת מקווקוות = מסך שיתווסף אחרי 80%</span>
+    <span>"חזרה" ו"ביטול" מחזירים למסך הקודם ולא צוירו</span>
+  </div>
+</section>
+
+<!-- ======================= 6 ======================= -->
+<h2>6. שימוש ב-AI בשלב התכנון</h2>
+<table>
+  <thead><tr><th class="c" style="width:13%">תאריך</th><th style="width:40%">מה שאלתי</th><th>מה עשיתי עם התשובה</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="c">18.10.2026</td>
+      <td>ביקשתי מ-Claude לבדוק אם תרשים המחלקות הקודם שלי (<code>SnapStudy_ClassDiagram.puml</code>) תואם לקוד.</td>
+      <td>נמצאו פערים: בתרשים הישן חסרו CredentialManager ב-LoginActivity, <code>showTimePickerDialog()</code> ב-SettingsActivity
+        ו-<code>setDailyGoal()</code> ב-StudyRepository, ובכרטיס הספיד-דייטינג רשמתי ל-GeminiStudyService שדה apiKey שבפועל נמצא ב-GeminiConfig.
+        התרשים בפרק 4 עודכן לפי הקוד.</td>
+    </tr>
+    <tr>
+      <td class="c">18.10.2026</td>
+      <td>ביקשתי מ-Claude לעזור לפרק את השלבים מ-<code>WORKPLAN.md</code> ל-Issues של 2–5 שעות ולבנות מהם תכנית שבועית.</td>
+      <td>החלוקה והתכנית נמצאות בפרקים 2–3. נבדק שכל Issue מופיע בתכנית ושסכום השעות זהה בשתי הטבלאות.</td>
+    </tr>
+    <tr>
+      <td class="c">18.10.2026</td>
+      <td>ביקשתי מ-Claude לבנות את תרשים זרימת המסכים מעיצובי ה-Stitch שלי ולבדוק מול הקוד אילו מעברים באמת קיימים.</td>
+      <td>במסך הכניסה המקורי היה כפתור Apple שהוסר מהאפליקציה, ולכן הוא לא מופיע בתרשים. נמצא גם שמחיקה ועריכה של ערכה עוד לא ממומשות,
+        והן עברו ל-Issue #28 אחרי ה-80%.</td>
+    </tr>
+  </tbody>
+</table>
+
+</body>
+</html>

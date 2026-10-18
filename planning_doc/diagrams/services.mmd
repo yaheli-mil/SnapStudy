@@ -1,0 +1,48 @@
+classDiagram
+  direction LR
+  class ScannerActivity {
+    -TextRecognizer textRecognizer
+    -DocumentOverlayView documentOverlayView
+    -processImageWithAi(Bitmap bmp) void
+  }
+  class View
+  class DocumentOverlayView {
+    -RectF currentRect
+    -String label
+    +setDetectedBounds(RectF rect) void
+    +setLabel(String label) void
+    +clear() void
+    #onDraw(Canvas canvas) void
+  }
+  class GeminiStudyService {
+    -String GEMINI_MODEL$
+    -OkHttpClient httpClient$
+    +generateFlashcardsFromBitmap(Context ctx, Bitmap bmp, AiStudyCallback cb)$ void
+    -parseStudySetFromJson(String json)$ StudySet
+    -scaleBitmapIfNeeded(Bitmap bmp, int maxDim)$ Bitmap
+    -bitmapToBase64Jpeg(Bitmap bmp)$ String
+  }
+  class GeminiConfig {
+    +getApiKey(Context ctx)$ String
+    +hasApiKey(Context ctx)$ boolean
+  }
+  class AiStudyCallback {
+    <<interface>>
+    +onSuccess(StudySet set) void
+    +onError(String message) void
+  }
+  class Application
+  class SnapStudyApp {
+    -SnapStudyApp instance$
+    +applySavedTheme(Context ctx)$ void
+    +saveThemeMode(Context ctx, int mode)$ void
+    +getReminderTime(Context ctx)$ String
+    +isSoundEnabled(Context ctx)$ boolean
+  }
+  View <|-- DocumentOverlayView
+  Application <|-- SnapStudyApp
+  ScannerActivity "1" *-- "1" DocumentOverlayView : draws frame
+  ScannerActivity ..> GeminiStudyService : sends photo
+  ScannerActivity ..> AiStudyCallback : implements
+  GeminiStudyService ..> GeminiConfig : reads key
+  GeminiStudyService ..> AiStudyCallback : returns result
