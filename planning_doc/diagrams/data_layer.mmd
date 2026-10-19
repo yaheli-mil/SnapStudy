@@ -9,7 +9,9 @@ classDiagram
     -int cardsStudiedToday
     -int dailyGoal
     -int focusMinutes
+    -boolean isLoaded
     +getInstance()$ StudyRepository
+    +isLoaded() boolean
     +loadLocalData(String uid) void
     +saveLocalData(String uid) void
     +syncWithFirestore(DataCallback cb) void

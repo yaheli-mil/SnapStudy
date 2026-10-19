@@ -43,6 +43,6 @@ classDiagram
   Application <|-- SnapStudyApp
   ScannerActivity "1" *-- "1" DocumentOverlayView : draws frame
   ScannerActivity ..> GeminiStudyService : sends photo
-  ScannerActivity ..> AiStudyCallback : implements
+  ScannerActivity ..> AiStudyCallback : anonymous class
   GeminiStudyService ..> GeminiConfig : reads key
   GeminiStudyService ..> AiStudyCallback : returns result
