@@ -15,9 +15,12 @@ import com.yalig.snapstudy.models.StudySet;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -48,6 +51,7 @@ public class StudyRepository {
     private int cardsStudiedToday = 0;    // מספר כרטיסיות שתורגלו היום
     private int dailyGoal = 50;           // יעד כרטיסיות יומי (ברירת מחדל: 50)
     private int focusMinutes = 0;         // דקות למידה וריכוז מצטברות
+    private String lastStudyDate = "";    // תאריך הלמידה האחרון (yyyy-MM-dd)
     private boolean isLoaded = false;     // דגל המציין האם הנתונים כבר נטענו
 
     /**
@@ -118,6 +122,10 @@ public class StudyRepository {
         cardsStudiedToday = prefs.getInt("cards_studied", cardsStudiedToday);
         dailyGoal = prefs.getInt("daily_goal", dailyGoal);
         focusMinutes = prefs.getInt("focus_minutes", focusMinutes);
+        lastStudyDate = prefs.getString("last_study_date", lastStudyDate);
+
+        // אם התחיל יום חדש - המונה היומי יוצג כ-0
+        rollOverDayIfNeeded();
     }
 
     /**
@@ -136,6 +144,7 @@ public class StudyRepository {
                 .putInt("cards_studied", cardsStudiedToday)
                 .putInt("daily_goal", dailyGoal)
                 .putInt("focus_minutes", focusMinutes)
+                .putString("last_study_date", lastStudyDate)
                 .apply();
 
         // שמירת עותק נוסף למגירת הגיבוי של המכשיר
@@ -177,11 +186,16 @@ public class StudyRepository {
                         Long studied = documentSnapshot.getLong("cardsStudiedToday");
                         Long goal = documentSnapshot.getLong("dailyGoal");
                         Long focus = documentSnapshot.getLong("focusMinutes");
+                        String lastDate = documentSnapshot.getString("lastStudyDate");
 
                         if (streak != null) streakDays = streak.intValue();
                         if (studied != null) cardsStudiedToday = studied.intValue();
                         if (goal != null) dailyGoal = goal.intValue();
                         if (focus != null) focusMinutes = focus.intValue();
+                        if (lastDate != null) lastStudyDate = lastDate;
+
+                        // הערכים מהענן עלולים להיות מיום קודם
+                        rollOverDayIfNeeded();
                         saveLocalData(uid);
                     } else {
                         // אם זה משתמש חדש לגמרי, ניצור עבורו מסמך ראשוני בענן
@@ -253,6 +267,7 @@ public class StudyRepository {
         userData.put("cardsStudiedToday", cardsStudiedToday);
         userData.put("dailyGoal", dailyGoal);
         userData.put("focusMinutes", focusMinutes);
+        userData.put("lastStudyDate", lastStudyDate);
         if (displayName != null) userData.put("displayName", displayName);
         if (email != null) userData.put("email", email);
 
@@ -403,9 +418,19 @@ public class StudyRepository {
     }
 
     /**
-     * מקדמת ב-1 את מונה הכרטיסיות שנלמדו היום ומעדכנת את ה-Firestore.
+     * מקדמת ב-1 את מונה הכרטיסיות שנלמדו היום, מעדכנת את רצף הימים ומעדכנת את ה-Firestore.
      */
     public void recordCardStudied() {
+        // ביום חדש: איפוס המונה היומי (ואיפוס הרצף אם דילגו על יום)
+        rollOverDayIfNeeded();
+
+        // הלמידה הראשונה היום: אם למדו אתמול הרצף ממשיך, אחרת הוא מתחיל מחדש מ-1
+        String today = getDateString(0);
+        if (!today.equals(lastStudyDate)) {
+            streakDays++;
+            lastStudyDate = today;
+        }
+
         cardsStudiedToday++;
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         String uid = user != null ? user.getUid() : "default";
@@ -413,9 +438,34 @@ public class StudyRepository {
 
         if (user != null) {
             db.collection("users").document(user.getUid())
-                    .update("cardsStudiedToday", cardsStudiedToday)
+                    .update("cardsStudiedToday", cardsStudiedToday,
+                            "streakDays", streakDays,
+                            "lastStudyDate", lastStudyDate)
                     .addOnFailureListener(e -> Log.w(TAG, "Failed to update studied count in Firestore", e));
         }
+    }
+
+    /**
+     * בודקת האם התחיל יום חדש מאז הלמידה האחרונה.
+     * ביום חדש המונה היומי מתאפס, ואם לא למדו אתמול - גם רצף הימים מתאפס.
+     */
+    private void rollOverDayIfNeeded() {
+        if (getDateString(0).equals(lastStudyDate)) return;
+        cardsStudiedToday = 0;
+        if (!getDateString(-1).equals(lastStudyDate)) {
+            streakDays = 0;
+        }
+    }
+
+    /**
+     * מחזירה תאריך בפורמט yyyy-MM-dd ביחס להיום.
+     * @param daysOffset הזזה בימים (0 = היום, -1 = אתמול).
+     * @return מחרוזת התאריך.
+     */
+    private String getDateString(int daysOffset) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_YEAR, daysOffset);
+        return new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(calendar.getTime());
     }
 
     /**
@@ -427,6 +477,7 @@ public class StudyRepository {
         cardsStudiedToday = 0;
         dailyGoal = 50;
         focusMinutes = 0;
+        lastStudyDate = "";
         isLoaded = false;
     }
 
