@@ -3,8 +3,17 @@ skinparam classAttributeIconSize 0
 skinparam roundcorner 6
 skinparam shadowing false
 skinparam packageStyle rectangle
+set separator none
+hide empty members
 
-package "models" {
+package "Android / Java" {
+    class AppCompatActivity
+    class View
+    class Application
+    interface Serializable
+}
+
+package "com.yalig.snapstudy.models" {
     class Flashcard {
         - id: String
         - question: String
@@ -28,7 +37,7 @@ package "models" {
     }
 }
 
-package "data" {
+package "com.yalig.snapstudy.data" {
     interface DataCallback {
         + onComplete(): void
     }
@@ -41,7 +50,9 @@ package "data" {
         - cardsStudiedToday: int
         - dailyGoal: int
         - focusMinutes: int
+        - isLoaded: boolean
         + {static} getInstance(): StudyRepository
+        + isLoaded(): boolean
         + loadLocalData(uid: String): void
         + saveLocalData(uid: String): void
         + syncWithFirestore(callback: DataCallback): void
@@ -49,12 +60,13 @@ package "data" {
         + getStudySetById(id: String): StudySet
         + addStudySet(set: StudySet): void
         + updateStudySet(set: StudySet): void
+        + setDailyGoal(goal: int): void
         + recordCardStudied(): void
         + clearData(): void
     }
 }
 
-package "ai" {
+package "com.yalig.snapstudy.ai" {
     class GeminiConfig {
         + {static} getApiKey(context: Context): String
         + {static} hasApiKey(context: Context): boolean
@@ -66,20 +78,27 @@ package "ai" {
     }
 
     class GeminiStudyService {
+        - {static} GEMINI_MODEL: String
+        - {static} httpClient: OkHttpClient
         + {static} generateFlashcardsFromBitmap(ctx: Context, bmp: Bitmap, cb: AiStudyCallback): void
         - {static} parseStudySetFromJson(json: String): StudySet
+        - {static} scaleBitmapIfNeeded(bmp: Bitmap, maxDimension: int): Bitmap
+        - {static} bitmapToBase64Jpeg(bmp: Bitmap): String
     }
 }
 
-package "ui_and_utils" {
+package "com.yalig.snapstudy.ui" {
     class DocumentOverlayView {
         - currentRect: RectF
         - label: String
         + setLabel(label: String): void
         + setDetectedBounds(rect: RectF): void
         + clear(): void
+        # onDraw(canvas: Canvas): void
     }
+}
 
+package "com.yalig.snapstudy.utils" {
     class ViewAnimationUtils <<utility>> {
         + {static} applyTouchScaleEffect(view: View): void
         + {static} animateStaggeredEntrance(view: View, delayMs: long): void
@@ -88,34 +107,44 @@ package "ui_and_utils" {
     }
 }
 
-package "activities" {
+package "com.yalig.snapstudy" {
     class SnapStudyApp {
         - {static} instance: SnapStudyApp
         + {static} getInstance(): SnapStudyApp
         + {static} applySavedTheme(context: Context): void
         + {static} saveThemeMode(context: Context, mode: int): void
         + {static} isNotificationsEnabled(context: Context): boolean
+        + {static} getReminderTime(context: Context): String
+        + {static} isSoundEnabled(context: Context): boolean
     }
 
     class LoginActivity {
         - mAuth: FirebaseAuth
+        - credentialManager: CredentialManager
         - isSignUpMode: boolean
         - handleEmailAuth(): void
         - signInWithGoogle(): void
+        - firebaseAuthWithGoogle(idToken: String): void
         - handleForgotPassword(): void
+        - navigateToMain(): void
     }
 
     class MainActivity {
+        - etSearch: EditText
         - currentSearch: String
         - updateUserProfile(user: FirebaseUser): void
         - refreshUI(): void
+        - refreshMetrics(): void
         - populateStudySets(query: String): void
         - showCreateSetDialog(): void
     }
 
     class ScannerActivity {
-        - isAutoMode: boolean
+        - cameraPreview: PreviewView
         - textRecognizer: TextRecognizer
+        - documentOverlayView: DocumentOverlayView
+        - isAutoMode: boolean
+        - startCamera(): void
         - analyzeImageForDocument(imageProxy: ImageProxy): void
         - takePhotoAndProcess(): void
         - processImageWithAi(bitmap: Bitmap): void
@@ -125,28 +154,51 @@ package "activities" {
         - studySet: StudySet
         - cards: List<Flashcard>
         - currentIndex: int
+        - isAnswerRevealed: boolean
+        - displayCurrentCard(): void
         - revealAnswer(): void
         - onRatingSelected(difficulty: int, msg: String): void
+        - showDeckCompletedDialog(): void
     }
 
     class SettingsActivity {
         - updateThemeButtonsUI(mode: int): void
+        - showTimePickerDialog(tvReminderTime: TextView): void
         - showEditDailyGoalDialog(badge: TextView): void
     }
 }
 
+' Inheritance and interface realization
+AppCompatActivity <|-- LoginActivity
+AppCompatActivity <|-- MainActivity
+AppCompatActivity <|-- ScannerActivity
+AppCompatActivity <|-- FlashcardsActivity
+AppCompatActivity <|-- SettingsActivity
+View <|-- DocumentOverlayView
+Application <|-- SnapStudyApp
+Serializable <|.. Flashcard
+Serializable <|.. StudySet
+
+' Composition, aggregation and nested interfaces
 StudySet "1" *-- "0..*" Flashcard : contains
 StudyRepository "1" o-- "0..*" StudySet : manages
 StudyRepository +-- DataCallback
 GeminiStudyService +-- AiStudyCallback
+ScannerActivity "1" *-- "1" DocumentOverlayView : draws frame
 
+' Dependencies
+GeminiStudyService ..> GeminiConfig : reads API key
 GeminiStudyService ..> StudySet : creates
-MainActivity ..> StudyRepository : sync & fetch
-MainActivity ..> FlashcardsActivity : opens
-MainActivity ..> ScannerActivity : opens
-ScannerActivity ..> DocumentOverlayView : displays
 ScannerActivity ..> GeminiStudyService : AI analysis
+ScannerActivity ..> AiStudyCallback : anonymous implementation
 ScannerActivity ..> StudyRepository : saves set
+MainActivity ..> StudyRepository : sync & fetch
 FlashcardsActivity ..> StudyRepository : updates progress
-SettingsActivity ..> StudyRepository : updates goals
+SettingsActivity ..> StudyRepository : updates daily goal
+SettingsActivity ..> SnapStudyApp : theme & reminder
+LoginActivity ..> MainActivity : opens
+MainActivity ..> ScannerActivity : opens
+MainActivity ..> FlashcardsActivity : opens
+MainActivity ..> SettingsActivity : opens
+ScannerActivity ..> FlashcardsActivity : opens
 @enduml
