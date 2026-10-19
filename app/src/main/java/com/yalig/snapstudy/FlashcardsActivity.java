@@ -3,6 +3,8 @@ package com.yalig.snapstudy;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.app.AlertDialog;
+import android.media.AudioManager;
+import android.media.ToneGenerator;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ProgressBar;
@@ -31,9 +33,10 @@ import java.util.List;
  * מסך זה מממש את מתודולוגיית ה-"Active Recall" (שליפה פעילה מהזיכרון):
  * 1. הצגת השאלה או המושג ללומד מבלי לחשוף את התשובה.
  * 2. בלחיצה על הכרטיסייה, מופעלת אנימציית היפוך תלת-ממדית (3D Flip Animation סביב ציר ה-Y) החושפת את התשובה.
- * 3. חשיפת 4 כפתורי דירוג קושי (Again, Hard, Good, Easy) המעדכנים את מדדי הלמידה ואת אלגוריתם החזרה המרווחת.
+ * 3. חשיפת 4 כפתורי דירוג קושי (Again, Hard, Good, Easy) המעדכנים את מדדי הלמידה ואת מרווח החזרה של הכרטיסייה,
+ *    ושמירת ההתקדמות (מקומית וב-Firestore) אחרי כל דירוג.
  * 4. מעקב התקדמות ויזואלי באמצעות פס התקדמות (ProgressBar) ומונה כרטיסיות.
- * 5. הצגת דיאלוג סיום מעודד בסיום הערכה ועדכון ה-Streak והיעד היומי.
+ * 5. הצגת דיאלוג סיום מעודד בסיום הערכה עם ציון (כמה כרטיסיות סומנו "טוב" או "קל").
  */
 public class FlashcardsActivity extends AppCompatActivity {
 
@@ -45,6 +48,10 @@ public class FlashcardsActivity extends AppCompatActivity {
     private List<Flashcard> cards;
     private int currentIndex = 0;          // אינדקס הכרטיסייה הנוכחית שמוצגת
     private boolean isAnswerRevealed = false; // האם התשובה של הכרטיסייה הנוכחית כבר נחשפה
+    private int correctCount = 0;          // מספר הכרטיסיות שסומנו "טוב" או "קל" בסבב הנוכחי
+
+    // מחולל צליל קצר למשוב על תשובה נכונה
+    private ToneGenerator toneGenerator;
 
     // רכיבי ממשק משתמש
     private TextView tvDeckTitle;
@@ -200,6 +207,16 @@ public class FlashcardsActivity extends AppCompatActivity {
         ViewAnimationUtils.applyActivityCloseTransition(this);
     }
 
+    @Override
+    protected void onDestroy() {
+        // שחרור מחולל הצליל כדי לא להשאיר משאבי שמע תפוסים
+        if (toneGenerator != null) {
+            toneGenerator.release();
+            toneGenerator = null;
+        }
+        super.onDestroy();
+    }
+
     /**
      * הופכת את הכרטיסייה וחושפת את התשובה בליווי אנימציית היפוך תלת-ממדית (3D Flip Animation).
      * שלב 1: סיבוב הכרטיס ב-90 מעלות על ציר ה-Y (חצי היפוך).
@@ -237,7 +254,8 @@ public class FlashcardsActivity extends AppCompatActivity {
 
     /**
      * מטפלת בבחירת דירוג קושי עבור הכרטיסייה:
-     * מעדכנת את מונה הכרטיסיות שנלמדו ב-Repository, שומרת את דרגת הקושי,
+     * מעדכנת את מונה הכרטיסיות שנלמדו ב-Repository, מעדכנת את הכרטיסייה (קושי, חזרות ומרווח חזרה),
+     * מחשבת מחדש את אחוז השליטה ושומרת את הערכה דרך ה-Repository (מקומית וב-Firestore),
      * ומקדמת לכרטיסייה הבאה (או פותחת דיאלוג סיום אם תורגלו כל הכרטיסיות).
      * @param difficulty דרגת הקושי שנבחרה (1 עד 4).
      * @param toastMessage הודעת חיווי קצרה.
@@ -245,8 +263,17 @@ public class FlashcardsActivity extends AppCompatActivity {
     private void onRatingSelected(int difficulty, String toastMessage) {
         StudyRepository.getInstance().recordCardStudied();
         Flashcard card = cards.get(currentIndex);
-        card.setDifficulty(difficulty);
-        card.incrementRepetition();
+        card.applyRating(difficulty);
+
+        // תשובה נכונה ("טוב" או "קל"): ספירה לציון הסיום והשמעת צליל משוב
+        if (difficulty <= 2) {
+            correctCount++;
+            playSuccessSound();
+        }
+
+        // עדכון אחוז השליטה ושמירת ההתקדמות כדי שלא תאבד ביציאה מהמסך
+        studySet.updateMasteryPercentage();
+        StudyRepository.getInstance().updateStudySet(studySet);
 
         if (currentIndex < cards.size() - 1) {
             currentIndex++;
@@ -257,16 +284,36 @@ public class FlashcardsActivity extends AppCompatActivity {
     }
 
     /**
-     * מציגה דיאלוג חגיגי בעת סיום תרגול כל הכרטיסיות בערכה,
+     * משמיעה צליל קצר של תשובה נכונה, רק אם הצלילים מופעלים במסך ההגדרות.
+     */
+    private void playSuccessSound() {
+        if (!SnapStudyApp.isSoundEnabled(this)) return;
+        try {
+            if (toneGenerator == null) {
+                toneGenerator = new ToneGenerator(AudioManager.STREAM_MUSIC, 80);
+            }
+            toneGenerator.startTone(ToneGenerator.TONE_PROP_ACK, 150);
+        } catch (RuntimeException e) {
+            // במכשירים מסוימים לא ניתן ליצור ToneGenerator - במקרה כזה פשוט מוותרים על הצליל
+        }
+    }
+
+    /**
+     * מציגה דיאלוג חגיגי בעת סיום תרגול כל הכרטיסיות בערכה, כולל ציון הסבב,
      * עם אפשרות לחזור למסך הראשי או לתרגל את הערכה שוב מההתחלה.
      */
     private void showDeckCompletedDialog() {
+        int total = cards.size();
+        int scorePercent = correctCount * 100 / total;
         new AlertDialog.Builder(this)
                 .setTitle("🎉 כל הכבוד!")
-                .setMessage("השלמת את כל " + cards.size() + " הכרטיסיות בערכת " + studySet.getTitle() + "!\nהרצף והיעד היומי שלך עודכנו.")
+                .setMessage("השלמת את כל " + total + " הכרטיסיות בערכת " + studySet.getTitle() + "!\n"
+                        + "ידעת " + correctCount + " מתוך " + total + " (" + scorePercent + "%).\n"
+                        + "היעד היומי שלך עודכן.")
                 .setPositiveButton("חזרה ללוח הבקרה", (dialog, which) -> finish())
                 .setNegativeButton("תרגל שוב", (dialog, which) -> {
                     currentIndex = 0;
+                    correctCount = 0;
                     displayCurrentCard();
                 })
                 .setCancelable(false)

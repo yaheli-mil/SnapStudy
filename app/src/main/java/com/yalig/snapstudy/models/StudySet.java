@@ -97,5 +97,23 @@ public class StudySet implements Serializable {
         }
         this.flashcards.add(card);
     }
+
+    /**
+     * מחשבת מחדש את אחוז השליטה בערכה:
+     * אחוז הכרטיסיות שכבר תורגלו וסומנו בפעם האחרונה כ"טוב" או "קל".
+     */
+    public void updateMasteryPercentage() {
+        if (flashcards == null || flashcards.isEmpty()) {
+            masteryPercentage = 0;
+            return;
+        }
+        int mastered = 0;
+        for (Flashcard card : flashcards) {
+            if (card.getRepetitionCount() > 0 && card.getDifficulty() <= 2) {
+                mastered++;
+            }
+        }
+        masteryPercentage = mastered * 100 / flashcards.size();
+    }
 }
 
