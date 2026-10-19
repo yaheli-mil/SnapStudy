@@ -462,8 +462,17 @@ skinparam classAttributeIconSize 0
 skinparam roundcorner 6
 skinparam shadowing false
 skinparam packageStyle rectangle
+set separator none
+hide empty members
 
-package "models" {
+package "Android / Java" {
+    class AppCompatActivity
+    class View
+    class Application
+    interface Serializable
+}
+
+package "com.yalig.snapstudy.models" {
     class Flashcard {
         - id: String
         - question: String
@@ -487,7 +496,7 @@ package "models" {
     }
 }
 
-package "data" {
+package "com.yalig.snapstudy.data" {
     interface DataCallback {
         + onComplete(): void
     }
@@ -500,7 +509,9 @@ package "data" {
         - cardsStudiedToday: int
         - dailyGoal: int
         - focusMinutes: int
+        - isLoaded: boolean
         + {static} getInstance(): StudyRepository
+        + isLoaded(): boolean
         + loadLocalData(uid: String): void
         + saveLocalData(uid: String): void
         + syncWithFirestore(callback: DataCallback): void
@@ -508,12 +519,13 @@ package "data" {
         + getStudySetById(id: String): StudySet
         + addStudySet(set: StudySet): void
         + updateStudySet(set: StudySet): void
+        + setDailyGoal(goal: int): void
         + recordCardStudied(): void
         + clearData(): void
     }
 }
 
-package "ai" {
+package "com.yalig.snapstudy.ai" {
     class GeminiConfig {
         + {static} getApiKey(context: Context): String
         + {static} hasApiKey(context: Context): boolean
@@ -525,20 +537,27 @@ package "ai" {
     }
 
     class GeminiStudyService {
+        - {static} GEMINI_MODEL: String
+        - {static} httpClient: OkHttpClient
         + {static} generateFlashcardsFromBitmap(ctx: Context, bmp: Bitmap, cb: AiStudyCallback): void
         - {static} parseStudySetFromJson(json: String): StudySet
+        - {static} scaleBitmapIfNeeded(bmp: Bitmap, maxDimension: int): Bitmap
+        - {static} bitmapToBase64Jpeg(bmp: Bitmap): String
     }
 }
 
-package "ui_and_utils" {
+package "com.yalig.snapstudy.ui" {
     class DocumentOverlayView {
         - currentRect: RectF
         - label: String
         + setLabel(label: String): void
         + setDetectedBounds(rect: RectF): void
         + clear(): void
+        # onDraw(canvas: Canvas): void
     }
+}
 
+package "com.yalig.snapstudy.utils" {
     class ViewAnimationUtils <<utility>> {
         + {static} applyTouchScaleEffect(view: View): void
         + {static} animateStaggeredEntrance(view: View, delayMs: long): void
@@ -547,34 +566,44 @@ package "ui_and_utils" {
     }
 }
 
-package "activities" {
+package "com.yalig.snapstudy" {
     class SnapStudyApp {
         - {static} instance: SnapStudyApp
         + {static} getInstance(): SnapStudyApp
         + {static} applySavedTheme(context: Context): void
         + {static} saveThemeMode(context: Context, mode: int): void
         + {static} isNotificationsEnabled(context: Context): boolean
+        + {static} getReminderTime(context: Context): String
+        + {static} isSoundEnabled(context: Context): boolean
     }
 
     class LoginActivity {
         - mAuth: FirebaseAuth
+        - credentialManager: CredentialManager
         - isSignUpMode: boolean
         - handleEmailAuth(): void
         - signInWithGoogle(): void
+        - firebaseAuthWithGoogle(idToken: String): void
         - handleForgotPassword(): void
+        - navigateToMain(): void
     }
 
     class MainActivity {
+        - etSearch: EditText
         - currentSearch: String
         - updateUserProfile(user: FirebaseUser): void
         - refreshUI(): void
+        - refreshMetrics(): void
         - populateStudySets(query: String): void
         - showCreateSetDialog(): void
     }
 
     class ScannerActivity {
-        - isAutoMode: boolean
+        - cameraPreview: PreviewView
         - textRecognizer: TextRecognizer
+        - documentOverlayView: DocumentOverlayView
+        - isAutoMode: boolean
+        - startCamera(): void
         - analyzeImageForDocument(imageProxy: ImageProxy): void
         - takePhotoAndProcess(): void
         - processImageWithAi(bitmap: Bitmap): void
@@ -584,30 +613,53 @@ package "activities" {
         - studySet: StudySet
         - cards: List<Flashcard>
         - currentIndex: int
+        - isAnswerRevealed: boolean
+        - displayCurrentCard(): void
         - revealAnswer(): void
         - onRatingSelected(difficulty: int, msg: String): void
+        - showDeckCompletedDialog(): void
     }
 
     class SettingsActivity {
         - updateThemeButtonsUI(mode: int): void
+        - showTimePickerDialog(tvReminderTime: TextView): void
         - showEditDailyGoalDialog(badge: TextView): void
     }
 }
 
+' Inheritance and interface realization
+AppCompatActivity <|-- LoginActivity
+AppCompatActivity <|-- MainActivity
+AppCompatActivity <|-- ScannerActivity
+AppCompatActivity <|-- FlashcardsActivity
+AppCompatActivity <|-- SettingsActivity
+View <|-- DocumentOverlayView
+Application <|-- SnapStudyApp
+Serializable <|.. Flashcard
+Serializable <|.. StudySet
+
+' Composition, aggregation and nested interfaces
 StudySet "1" *-- "0..*" Flashcard : contains (הכלה מלאה)
 StudyRepository "1" o-- "0..*" StudySet : manages (אגירה וניהול)
 StudyRepository +-- DataCallback
 GeminiStudyService +-- AiStudyCallback
+ScannerActivity "1" *-- "1" DocumentOverlayView : מצייר מסגרת זיהוי
 
+' Dependencies
+GeminiStudyService ..> GeminiConfig : קורא מפתח API
 GeminiStudyService ..> StudySet : יוצר
-MainActivity ..> StudyRepository : סנכרון ושליפה
-MainActivity ..> FlashcardsActivity : פותח
-MainActivity ..> ScannerActivity : פותח
-ScannerActivity ..> DocumentOverlayView : מציג על המסך
 ScannerActivity ..> GeminiStudyService : ניתוח AI
+ScannerActivity ..> AiStudyCallback : מימוש כמחלקה אנונימית
 ScannerActivity ..> StudyRepository : שמירת ערכה
+MainActivity ..> StudyRepository : סנכרון ושליפה
 FlashcardsActivity ..> StudyRepository : עדכון התקדמות
 SettingsActivity ..> StudyRepository : עדכון יעד יומי
+SettingsActivity ..> SnapStudyApp : ערכת נושא ותזכורת
+LoginActivity ..> MainActivity : פותח
+MainActivity ..> ScannerActivity : פותח
+MainActivity ..> FlashcardsActivity : פותח
+MainActivity ..> SettingsActivity : פותח
+ScannerActivity ..> FlashcardsActivity : פותח
 @enduml
 ```
 
@@ -663,6 +715,8 @@ SettingsActivity ..> StudyRepository : עדכון יעד יומי
 | `isNotificationsEnabled(Context)` | `boolean` | בודקת האם המשתמש אישר קבלת תזכורות. |
 | `setNotificationsEnabled(Context, boolean)` | `void` | מעדכנת את מצב ההתראות בקובץ ההגדרות. |
 | `getReminderTime(Context) / setReminderTime(Context, String)` | `String / void` | קריאה וכתיבה של שעת התזכורת היומית. |
+| `isSoundEnabled(Context) / setSoundEnabled(Context, boolean)` | `boolean / void` | קריאה וכתיבה של הגדרת האפקטים הקוליים (ברירת מחדל: מופעלים). |
+| `getInstance()` | `static SnapStudyApp` | מחזירה את המופע היחיד של מחלקת ה-Application, שנשמר ב-onCreate. |
 
 ```java
 public static void applySavedTheme(Context context) {
@@ -750,11 +804,15 @@ public void addFlashcard(Flashcard card) {
 | שם הפעולה | ערך מוחזר | הסבר לוגי מפורט |
 | :--- | :--- | :--- |
 | `getInstance()` | `static synchronized StudyRepository` | מחזיר את המופע היחידן ויוצר אותו בפעם הראשונה באופן thread-safe. |
+| `isLoaded()` | `boolean` | מחזירה את ערך הדגל isLoaded, כלומר האם המאגר כבר סיים טעינה ראשונית. |
 | `loadLocalData(String uid)` | `void` | טוענת באופן מיידי את הנתונים והסטטיסטיקות מקובץ SharedPreferences מקומי המקושר ל-UID של המשתמש. |
 | `saveLocalData(String uid)` | `void` | ממירה את רשימת הערכות למחרוזת JSON ושומרת אותה יחד עם הסטטיסטיקות ב-SharedPreferences. |
 | `syncWithFirestore(DataCallback)` | `void` | מבצעת סנכרון דו-כיווני אסינכרוני מול Cloud Firestore: שולפת את נתוני המשתמש והערכות מהענן, ממזגת ערכות חדשות שנוצרו מקומית, ושומרת את המצב המעודכן. |
+| `getAllStudySets()` | `List<StudySet>` | מחזירה עותק של רשימת הערכות, כדי שמסכים אחרים לא ישנו את הרשימה המקורית (Encapsulation). |
+| `getStudySetById(String id)` | `StudySet` | מאתרת ערכה לפי המזהה שלה. אם לא נמצאה, מחזירה את הערכה הראשונה ברשימה (או null אם הרשימה ריקה). |
 | `addStudySet(StudySet)` | `void` | מוסיפה ערכה חדשה לראש הרשימה, מעדכנת את הקאש המקומי ומעלה אותה ל-Firestore. |
 | `updateStudySet(StudySet)` | `void` | מעדכנת ערכה קיימת מקומית ובענן. |
+| `setDailyGoal(int goal)` | `void` | מעדכנת את היעד היומי, שומרת אותו מקומית ב-SharedPreferences ומעדכנת את השדה dailyGoal במסמך המשתמש ב-Firestore. |
 | `recordCardStudied()` | `void` | מקדמת את מונה הכרטיסיות שנלמדו היום ומעדכנת את מסד הנתונים. |
 | `clearData()` | `void` | מאפסת את כל המונים והרשימות בזיכרון בעת התנתקות מהחשבון. |
 | `setsToJson(List<StudySet>) / jsonToSets(String)` | `private String / List<StudySet>` | מתודות עזר המבצעות המרה סדרתית (Serialization/Deserialization) בין אובייקטי Java לבין מבנה JSON תקני. |
@@ -850,6 +908,7 @@ httpClient.newCall(request).enqueue(new Callback() {
 | :--- | :--- | :--- |
 | `DocumentOverlayView(Context, AttributeSet)` | `Constructor` | בנאי המאתחל את צבעי המברשות, עובי הקווים וחישובי ה-Density. |
 | `setDetectedBounds(RectF)` | `void` | מעדכנת את גבולות המסמך המזוהה ומבצעת החלקת תנועה (Linear Interpolation בשיעור 45% בכל פריים) למניעת קפיצות ויזואליות. |
+| `setLabel(String)` | `void` | מעדכנת את הטקסט שבתגית הצפה (למשל אחוז ההתקדמות בזמן הסריקה) ומבקשת ציור מחדש. |
 | `clear()` | `void` | מאפסת את התיבה ומנקה את המסך ברגע שהמסמך אינו מזוהה. |
 | `onDraw(Canvas)` | `protected void` | דורסת את מתודת הציור ומבצעת ציור בשלושה שלבים: מילוי שקוף ומסגרת מעוגלת, עוגני פינות מודגשים, ותגית חיווי צפה הממוקמת תמיד מעל המסמך. |
 
@@ -916,6 +975,7 @@ public static void applyTouchScaleEffect(View view) {
 | `signInWithGoogle()` | `void` | מפעילה בקשת אימות אסינכרונית דרך Google Credential Manager ושולפת ID Token. |
 | `firebaseAuthWithGoogle(String idToken)` | `void` | ממירה את טוקן ה-Google ל-AuthCredential ומבצעת התחברות ב-Firebase Auth. |
 | `handleForgotPassword()` | `void` | פותחת דיאלוג ייעודי המאמת קיום חשבון ושולח מייל שחזור סיסמה. |
+| `navigateToMain()` | `void` | פותחת את MainActivity עם מעבר מונפש, מנקה את מחסנית המסכים (FLAG_ACTIVITY_CLEAR_TASK) וסוגרת את מסך הכניסה. |
 
 ```java
 private void handleEmailAuth() {
@@ -949,6 +1009,9 @@ private void handleEmailAuth() {
 | :--- | :--- | :--- |
 | `onCreate(Bundle)` | `void` | וידוא משתמש מחובר, אתחול EdgeToEdge, טעינת קאש מקומי מיידי ורענון ממשק. |
 | `onResume()` | `void` | בדיקת שינוי ערכת נושא, עדכון פרופיל המשתמש, והפעלת סנכרון רקע מול Cloud Firestore. |
+| `updateUserProfile(FirebaseUser)` | `void` | מציגה ברכה אישית עם שם המשתמש (או החלק שלפני ה-@ בכתובת המייל) וטוענת את תמונת הפרופיל באמצעות Glide. |
+| `refreshUI()` | `void` | מרעננת את המדדים, ומציגה מסך פתיחה למשתמש חדש או את רשימת הערכות, לפי מספר הערכות במאגר. |
+| `refreshMetrics()` | `void` | מעדכנת את מונה הכרטיסיות של היום מול היעד היומי, את דקות הריכוז ואת תגית הרצף (מוצגת מרצף של יומיים ומעלה). |
 | `populateStudySets(String query)` | `void` | מייצרת ומנפחת (Inflate) כרטיסי ערכות לימוד תואמות לחיפוש, מגדירה צבעי נושא לפי מקצוע, ומצמידה מאזיני לחיצה לפתיחת התרגול. |
 | `showCreateSetDialog()` | `void` | מציגה תיבת דו-שיח ליצירה ידנית של ערכת לימוד חדשה וכרטיסייה ראשונה. |
 
@@ -968,6 +1031,8 @@ etSearch.addTextChangedListener(new TextWatcher() {
 
 | שם התכונה | סוג והרשאת גישה | תפקיד ושימוש |
 | :--- | :--- | :--- |
+| `cameraPreview` | `private PreviewView` | רכיב התצוגה המקדימה של CameraX שמציג את תמונת המצלמה החיה. |
+| `documentOverlayView` | `private DocumentOverlayView` | השכבה הגרפית שמציירת את מסגרת הזיהוי מעל התצוגה המקדימה. |
 | `isAutoMode` | `private boolean` | דגל הקובע האם מופעל צילום אוטומטי ללא מגע. |
 | `documentFirstDetectedTime` | `private long` | חותמת זמן של תחילת זיהוי רציף לצורך ייצוב. |
 | `textRecognizer` | `private TextRecognizer` | מופע מנוע זיהוי הטקסט של ML Kit. |
@@ -1010,6 +1075,7 @@ if (elapsed >= 1100) {
 | `displayCurrentCard()` | `private void` | מציגה את שאלת הכרטיסייה הנוכחית, מאפסת את מצב החשיפה, מעדכנת את מונה ההתקדמות ואת ה-ProgressBar, ומפעילה אנימציית החלקה עדינה. |
 | `revealAnswer()` | `private void` | מפעילה אנימציית היפוך תלת-ממדית (Flip) על ציר ה-Y: כרטיס מסתובב ל-90 מעלות, השאלה מתחלפת בתשובה ומוצגים 4 כפתורי דירוג, והכרטיס משלים סיבוב חזרה. |
 | `onRatingSelected(int difficulty, String msg)` | `private void` | מעדכנת את רמת הקושי של הכרטיסייה, מקדמת את מונה החזרות ואת כרטיסיות היום ב-StudyRepository, ומעבירה לכרטיסייה הבאה או פותחת דיאלוג סיום. |
+| `showDeckCompletedDialog()` | `private void` | מציגה דיאלוג סיום כשכל הכרטיסיות בערכה תורגלו, עם אפשרות לחזור ללוח הבקרה או לתרגל שוב מההתחלה. |
 
 ```java
 cardView.animate().rotationY(90f).setDuration(150)
@@ -1032,6 +1098,7 @@ cardView.animate().rotationY(90f).setDuration(150)
 | שם הפעולה | ערך מוחזר | הסבר לוגי מפורט |
 | :--- | :--- | :--- |
 | `onCreate(Bundle)` | `void` | מאתחלת את פרטי המשתמש מ-FirebaseUser (שם, מייל ותמונה דרך Glide), מגדירה מאזינים לכפתורי Theming, יעד יומי ומתגים. |
+| `updateThemeButtonsUI(int)` | `private void` | מדגישה את כפתור ערכת הנושא הפעילה (בהיר, כהה או אוטומטי) ומחזירה את שני האחרים לעיצוב הרגיל. |
 | `showEditDailyGoalDialog(TextView)` | `private void` | מציגה דיאלוג עם שדה קלט מספרי המאפשר עדכון של יעד הכרטיסיות היומי (1-2000) ב-Repository וב-Firestore. |
 | `showTimePickerDialog(TextView)` | `private void` | פותחת TimePickerDialog לבחירת שעת תזכורת יומית ושומרת אותה ב-SharedPreferences. |
 
