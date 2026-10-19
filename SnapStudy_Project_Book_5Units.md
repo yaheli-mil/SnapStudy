@@ -456,6 +456,20 @@ UC_Settings ..> Firebase : שומר העדפות משתמש
 ### 5.2 תרשים מחלקות UML מלא (PlantUML Diagram)
 להלן תרשים ה-UML המלא של המערכת, המתאר את כל מחלקות הפרויקט, תכונותיהן, פעולותיהן, ואת קשרי ההורשה (Inheritance), ההכלה (Composition/Aggregation) והתלות (Dependency) ביניהן:
 
+**תרשים 5.2.1 – שכבת הנתונים (המודל): StudyRepository, StudySet ו-Flashcard**
+
+![תרשים 5.2.1 – שכבת הנתונים (המודל): StudyRepository, StudySet ו-Flashcard](planning_doc/diagrams/data_layer.png)
+
+**תרשים 5.2.2 – שכבת התצוגה: חמשת המסכים (Activities) והירושה מ-AppCompatActivity**
+
+![תרשים 5.2.2 – שכבת התצוגה: חמשת המסכים (Activities) והירושה מ-AppCompatActivity](planning_doc/diagrams/view_layer.png)
+
+**תרשים 5.2.3 – שירותים ומחלקות עזר: מצלמה, AI והגדרות האפליקציה**
+
+![תרשים 5.2.3 – שירותים ומחלקות עזר: מצלמה, AI והגדרות האפליקציה](planning_doc/diagrams/services.png)
+
+**💻 קוד PlantUML של תרשים המחלקות (SnapStudy_ClassDiagram.puml):**
+
 ```plantuml
 @startuml SnapStudy_ClassDiagram
 skinparam classAttributeIconSize 0
