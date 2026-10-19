@@ -12,6 +12,7 @@ service cloud.firestore {
     //   - cardsStudiedToday: number (>= 0)
     //   - dailyGoal: number (>= 0)
     //   - focusMinutes: number (>= 0)
+    //   - lastStudyDate: string ("yyyy-MM-dd" or empty)
     //   - displayName: string (optional, <= 100)
     //   - email: string (optional, <= 100)
     //
@@ -36,11 +37,12 @@ service cloud.firestore {
     }
 
     function isValidUserData(data) {
-      return data.keys().hasOnly(['streakDays', 'cardsStudiedToday', 'dailyGoal', 'focusMinutes', 'displayName', 'email', 'updatedAt']) &&
+      return data.keys().hasOnly(['streakDays', 'cardsStudiedToday', 'dailyGoal', 'focusMinutes', 'lastStudyDate', 'displayName', 'email', 'updatedAt']) &&
              (!('streakDays' in data) || (data.streakDays is number && data.streakDays >= 0)) &&
              (!('cardsStudiedToday' in data) || (data.cardsStudiedToday is number && data.cardsStudiedToday >= 0)) &&
              (!('dailyGoal' in data) || (data.dailyGoal is number && data.dailyGoal >= 0)) &&
              (!('focusMinutes' in data) || (data.focusMinutes is number && data.focusMinutes >= 0)) &&
+             (!('lastStudyDate' in data) || (data.lastStudyDate is string && data.lastStudyDate.size() <= 10)) &&
              (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
              (!('email' in data) || (data.email is string && data.email.size() <= 100));
     }

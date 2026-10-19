@@ -85,5 +85,22 @@ public class Flashcard implements Serializable {
 
     public int getDifficulty() { return difficulty; }
     public void setDifficulty(int difficulty) { this.difficulty = difficulty; }
+
+    /**
+     * מעדכנת את הכרטיסייה לפי הדירוג שהמשתמש בחר בתרגול:
+     * שומרת את דרגת הקושי, מעלה את מונה החזרות וקובעת את מרווח החזרה הבא
+     * (לפי מה שכתוב על כפתורי הדירוג: שוב - עוד היום, קשה - יומיים, טוב - 4 ימים, קל - 7 ימים).
+     * @param difficulty דרגת הקושי שנבחרה (1: קל, 2: טוב, 3: קשה, 4: שוב).
+     */
+    public void applyRating(int difficulty) {
+        this.difficulty = difficulty;
+        incrementRepetition();
+        switch (difficulty) {
+            case 1: this.intervalDays = 7; break;  // קל
+            case 2: this.intervalDays = 4; break;  // טוב
+            case 3: this.intervalDays = 2; break;  // קשה
+            default: this.intervalDays = 0; break; // שוב - חזרה עוד היום
+        }
+    }
 }
 
