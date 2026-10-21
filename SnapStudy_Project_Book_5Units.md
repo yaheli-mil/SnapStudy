@@ -98,8 +98,8 @@
 - **מערכת תרגול כרטיסיות אינטראקטיבית:** חוויית תרגול מהנה הכוללת אנימציית היפוך תלת-ממדית (3D Flip), הצגת שאלות, חשיפת תשובות, ו-4 רמות דירוג קושי (Again, Hard, Good, Easy).
 - **סנכרון ענן בזמן אמת (Cloud Firestore):** אחסון מאובטח של כל ערכות הלימוד, הכרטיסיות, הסטטיסטיקות וההתקדמות של המשתמש בענן של Google, עם חוקי אבטחה קפדניים.
 - **מערכת אימות ואבטחה כפולה (Firebase Auth & Google Credential Manager):** התחברות מהירה בלחיצה אחת באמצעות חשבון Google, לצד תמיכה ברישום ואימות דוא"ל וסיסמה כולל איפוס סיסמה מאובטח.
-- **מעקב יעדים, מוטיבציה ורצף לימודי (Streak & Daily Goals):** הגדרת יעד כרטיסיות יומי אישי, מדידת דקות ריכוז, ומעקב רציף אחר ימי למידה רצופים (Streak Days) בליווי אלמנטים גרפיים מעודדים.
-- **התאמה אישית מלאה של סביבת הלמידה:** תמיכה במצב כהה (Dark Mode), מצב בהיר והתאמה למערכת ההפעלה, הגדרת שעת תזכורת יומית (TimePickerDialog) ושליטה באפקטים קוליים.
+- **מעקב יעדים, מוטיבציה ורצף לימודי (Streak & Daily Goals):** הגדרת יעד כרטיסיות יומי אישי ומעקב רציף אחר ימי למידה רצופים (Streak Days) בליווי אלמנטים גרפיים מעודדים. כרטיס דקות הריכוז כבר מוצג בלוח הבקרה, ומדידת הזמן עצמה מתוכננת (Issue #35).
+- **התאמה אישית מלאה של סביבת הלמידה:** תמיכה במצב כהה (Dark Mode), מצב בהיר והתאמה למערכת ההפעלה, בחירת שעת תזכורת יומית (TimePickerDialog; שליחת ההתראה עצמה מתוכננת ב-Issue #27) ושליטה באפקטים קוליים.
 - **ממשק משתמש מודרני מונגש (Material Design 3 & Full RTL):** עיצוב מוקפד לפי עקרונות הנדסת אנוש, תמיכה מלאה בכיווניות עברית (RTL), ואנימציות קפיציות טקטיליות במגע.
 
 
@@ -295,6 +295,12 @@ UC_Settings ..> Firebase : שומר העדפות משתמש
 ### 4.1 תרשים זרימת מסכים (Screen Flow Diagram)
 התרשים הבא מתאר את היררכיית המסכים באפליקציית SnapStudy ואת אפשרויות הניווט והמעבר ביניהם:
 
+**תרשים 4.1 – זרימת המסכים באפליקציה (לפי עיצובי ה-Stitch, כל חץ מסומן בפעולה שגורמת למעבר)**
+
+![תרשים 4.1 – זרימת המסכים באפליקציה (לפי עיצובי ה-Stitch, כל חץ מסומן בפעולה שגורמת למעבר)](planning_doc/diagrams/screen_flow.jpg)
+
+**פירוט המעברים בין המסכים (טקסט):**
+
 ```text
 +-------------------------------------------------------------+
 |                    LoginActivity (מסך כניסה)                |
@@ -368,7 +374,7 @@ UC_Settings ..> Firebase : שומר העדפות משתמש
 - **רכיבי תצוגה ופקדים:**
   - **תמונת פרופיל (ivUserAvatar):** מציגה את תמונת המשתמש מחשבון Google באמצעות ספריית Glide בעיגול מושלם. לחיצה עליה מנווטת ישירות למסך ההגדרות.
   - **כרטיס יעד יומי (cardTodayTarget):** מציג את מספר הכרטיסיות שנלמדו היום מתוך היעד היומי שנקבע.
-  - **כרטיס דקות ריכוז (cardFocusTime):** מציג את סך דקות הלמידה שנצברו.
+  - **כרטיס דקות ריכוז (cardFocusTime):** מציג את סך דקות הלמידה שנצברו. כרגע הערך עדיין לא מתעדכן בזמן תרגול, והמדידה מתוכננת ב-Issue #35.
   - **תגית רצף ימים (streakBadge):** מוצגת כאשר המשתמש שומר על רצף למידה של יומיים ומעלה (למשל: '3 ימים ברצף 🔥').
   - **סרגל חיפוש חי (etSearch):** שדה קלט בעל TextWatcher המאזין לכל תו מוקלד ומסנן באופן מיידי את רשימת הערכות לפי כותרת או מקצוע ללא צורך בלחיצה על כפתור חיפוש.
   - **כרטיסי ערכות לימוד (item_study_set):** כל כרטיס מציג את שם הערכה, תגית צבעונית ייחודית לפי מקצוע (כחול לביולוגיה, צהוב לכלכלה, סגול למתמטיקה), אחוז שליטה בחומר ומספר כרטיסיות. לחיצה על כרטיס פותחת את מסך התרגול עבור ערכה זו.
@@ -386,7 +392,7 @@ UC_Settings ..> Firebase : שומר העדפות משתמש
   - **שכבת זיהוי גרפית (documentOverlayView):** Custom View ייעודי המצייר מסגרת אדומה עם פינות מעוגלות סביב המסמך המזוהה, עוגני פינות מודגשים, ותגית חיווי צפה המציגה את התקדמות הזיהוי באחוזים.
   - **כפתור מצב אוטומטי (btnModeAuto):** מפעיל מצב סריקה אוטונומי: ברגע שהמסמך מזוהה ויציב במשך 1.1 שניות, המערכת מבצעת צילום אוטומטי ללא מגע יד.
   - **כפתור מצב ידני (btnModeManual):** מבטל את הצילום האוטומטי ומאפשר למשתמש לכוון ולצלם באופן ידני באמצעות כפתור הצילום.
-  - **כפתור תאורת פלאש (btnFlash):** מאפשר מעבר בין מצבי תאורה: כבוי, פעיל (לפיד קבוע לצילום בתנאי חושך), ואוטומטי.
+  - **כפתור תאורת פלאש (btnFlash):** מאפשר מעבר בין מצבי תאורה: כבוי ופעיל (לפיד קבוע לצילום בתנאי חושך). בכפתור מופיע גם מצב "אוטו", אבל כרגע הוא מתנהג כמו כבוי (Issue #36).
   - **כפתור צילום (btnShutter):** כפתור צילום עגול גדול המלווה באנימציית כיווץ ויזואלית ומפעיל את ImageCapture.
   - **כפתור בחירה מגלריה (btnGallery):** פותח את בורר התמונות של המכשיר באמצעות ActivityResultContracts.GetContent לבחירת תמונת סיכום קיימת.
   - **דיאלוג עיבוד AI (ProgressDialog):** מוצג בזמן שהתמונה מעובדת ונשלחת ל-Gemini API עם הודעת הסבר ברורה.
@@ -416,7 +422,7 @@ UC_Settings ..> Firebase : שומר העדפות משתמש
 - **רכיבי תצוגה ופקדים:**
   - **כפתורי ערכת נושא (Theme Selector):** שלושה כפתורי טבליה (Pill Buttons) המאפשרים בחירה מיידית בין 'בהיר', 'כהה' ו'אוטומטי לפי המערכת'. הבחירה נשמרת ב-SharedPreferences ומיושמת מיידית באמצעות AppCompatDelegate.
   - **שורת יעד כרטיסיות יומי (rowDailyGoal):** מציגה את היעד הנוכחי. לחיצה עליה פותחת תיבת דיאלוג עם שדה קלט מספרי להגדרת יעד כרטיסיות יומי חדש (בין 1 ל-2,000 כרטיסיות), המתעדכן מקומית וב-Firestore.
-  - **מתג התראות ותזכורות (switchNotifications):** מתג MaterialSwitch להפעלה וכיבוי של מערכת התזכורות.
+  - **מתג התראות ותזכורות (switchNotifications):** מתג MaterialSwitch שבו המשתמש מפעיל או מכבה את התזכורת היומית. ההגדרה נשמרת ב-SharedPreferences, ושליחת ההתראה בשעה שנבחרה מתוכננת ב-Issue #27.
   - **שורת שעת תזכורת (rowReminderTime):** זמינה כאשר מתג ההתראות פעיל. לחיצה עליה פותחת TimePickerDialog לבחירת שעת התזכורת המבוקשת.
   - **מתג אפקטים קוליים (switchSoundEffects):** שליטה בהשמעת צלילי משוב בעת לחיצה ותרגול.
   - **כפתור התנתקות (btnSignOut):** מבצע התנתקות מאובטחת מ-Firebase Auth, מאפס את נתוני הזיכרון ב-StudyRepository ומנווט חזרה למסך הכניסה.
@@ -496,6 +502,7 @@ package "com.yalig.snapstudy.models" {
         - repetitionCount: int
         - difficulty: int
         + incrementRepetition(): void
+        + applyRating(difficulty: int): void
     }
 
     class StudySet {
@@ -507,6 +514,7 @@ package "com.yalig.snapstudy.models" {
         - flashcards: List<Flashcard>
         + getCardCount(): int
         + addFlashcard(card: Flashcard): void
+        + updateMasteryPercentage(): void
     }
 }
 
@@ -524,6 +532,7 @@ package "com.yalig.snapstudy.data" {
         - dailyGoal: int
         - focusMinutes: int
         - isLoaded: boolean
+        - lastStudyDate: String
         + {static} getInstance(): StudyRepository
         + isLoaded(): boolean
         + loadLocalData(uid: String): void
@@ -536,6 +545,8 @@ package "com.yalig.snapstudy.data" {
         + setDailyGoal(goal: int): void
         + recordCardStudied(): void
         + clearData(): void
+        - rollOverDayIfNeeded(): void
+        - getDateString(daysOffset: int): String
     }
 }
 
@@ -628,10 +639,12 @@ package "com.yalig.snapstudy" {
         - cards: List<Flashcard>
         - currentIndex: int
         - isAnswerRevealed: boolean
+        - correctCount: int
         - displayCurrentCard(): void
         - revealAnswer(): void
         - onRatingSelected(difficulty: int, msg: String): void
         - showDeckCompletedDialog(): void
+        - playSuccessSound(): void
     }
 
     class SettingsActivity {
@@ -760,6 +773,7 @@ public static void applySavedTheme(Context context) {
 | `Flashcard()` | `Constructor` | בנאי ריק הנדרש לצורך המרה אוטומטית (Deserialization) על ידי Firebase Firestore ו-JSON. |
 | `Flashcard(id, question, answer, topic)` | `Constructor` | בנאי מלא המאתחל את שדות הכרטיסייה עם ערכי ברירת מחדל למרווח (1 יום) וקושי (2-טוב). |
 | `incrementRepetition()` | `void` | מקדמת באחד את מונה החזרות של הכרטיסייה בכל פעם שהמשתמש מדרג אותה בתרגול. |
+| `applyRating(int difficulty)` | `void` | מעדכנת את הכרטיסייה אחרי דירוג בתרגול: שומרת את רמת הקושי, מקדמת את מונה החזרות וקובעת את מרווח החזרה הבא (קל – 7 ימים, טוב – 4, קשה – 2, שוב – 0, כלומר עוד היום). |
 
 ```java
 public void incrementRepetition() {
@@ -787,6 +801,7 @@ public void incrementRepetition() {
 | `StudySet(id, title, category, updatedInfo, masteryPercentage)` | `Constructor` | בנאי מאתחל ראשי. |
 | `getCardCount()` | `int` | מחזיר את מספר הכרטיסיות בערכה (מסומן ב-@Exclude כדי לא להידרש כשדה נפרד ב-Firestore). |
 | `addFlashcard(Flashcard)` | `void` | מוסיף כרטיסייה חדשה לרשימת הכרטיסיות בערכה בבטיחות מלאה כנגד ערכי Null. |
+| `updateMasteryPercentage()` | `void` | מחשבת מחדש את אחוז השליטה בערכה: כמה אחוז מהכרטיסיות תורגלו לפחות פעם אחת ודורגו "קל" או "טוב". |
 
 ```java
 @com.google.firebase.firestore.Exclude
@@ -814,6 +829,7 @@ public void addFlashcard(Flashcard card) {
 | `dailyGoal` | `private int` | היעד היומי שקבע המשתמש (ברירת מחדל 50). |
 | `focusMinutes` | `private int` | סך דקות הריכוז שנצברו. |
 | `isLoaded` | `private boolean` | דגל המציין האם הנתונים נטענו בהצלחה. |
+| `lastStudyDate` | `private String` | תאריך הלמידה האחרון בפורמט yyyy-MM-dd. בעזרתו מעדכנים את הרצף ומאפסים את המונה היומי ביום חדש. |
 
 | שם הפעולה | ערך מוחזר | הסבר לוגי מפורט |
 | :--- | :--- | :--- |
@@ -827,8 +843,10 @@ public void addFlashcard(Flashcard card) {
 | `addStudySet(StudySet)` | `void` | מוסיפה ערכה חדשה לראש הרשימה, מעדכנת את הקאש המקומי ומעלה אותה ל-Firestore. |
 | `updateStudySet(StudySet)` | `void` | מעדכנת ערכה קיימת מקומית ובענן. |
 | `setDailyGoal(int goal)` | `void` | מעדכנת את היעד היומי, שומרת אותו מקומית ב-SharedPreferences ומעדכנת את השדה dailyGoal במסמך המשתמש ב-Firestore. |
-| `recordCardStudied()` | `void` | מקדמת את מונה הכרטיסיות שנלמדו היום ומעדכנת את מסד הנתונים. |
+| `recordCardStudied()` | `void` | מקדמת את מונה הכרטיסיות של היום. ביום חדש קודם מאפסת את המונה (rollOverDayIfNeeded), ובכרטיסייה הראשונה של היום מעדכנת את הרצף: ממשיך אם למדו אתמול, אחרת מתחיל מ-1. שומרת מקומית וב-Firestore. |
 | `clearData()` | `void` | מאפסת את כל המונים והרשימות בזיכרון בעת התנתקות מהחשבון. |
+| `rollOverDayIfNeeded()` | `private void` | ביום חדש מאפסת את מונה הכרטיסיות היומי, ואם דילגו על יום מאפסת גם את הרצף. |
+| `getDateString(int daysOffset)` | `private String` | מחזירה תאריך בפורמט yyyy-MM-dd ביחס להיום (0 = היום, ‎-1 = אתמול). |
 | `setsToJson(List<StudySet>) / jsonToSets(String)` | `private String / List<StudySet>` | מתודות עזר המבצעות המרה סדרתית (Serialization/Deserialization) בין אובייקטי Java לבין מבנה JSON תקני. |
 
 ```java
@@ -1083,13 +1101,17 @@ if (elapsed >= 1100) {
 | `cards` | `private List<Flashcard>` | רשימת הכרטיסיות בערכה. |
 | `currentIndex` | `private int` | אינדקס הכרטיסייה הנוכחית. |
 | `isAnswerRevealed` | `private boolean` | דגל המציין האם התשובה גלויה. |
+| `correctCount` | `private int` | מספר הכרטיסיות שסומנו "טוב" או "קל" בסבב הנוכחי. משמש לציון בדיאלוג הסיום. |
+| `toneGenerator` | `private ToneGenerator` | מחולל הצליל של משוב ההצלחה. נוצר בשימוש הראשון ומשוחרר ב-onDestroy. |
 
 | שם הפעולה | ערך מוחזר | הסבר לוגי מפורט |
 | :--- | :--- | :--- |
 | `displayCurrentCard()` | `private void` | מציגה את שאלת הכרטיסייה הנוכחית, מאפסת את מצב החשיפה, מעדכנת את מונה ההתקדמות ואת ה-ProgressBar, ומפעילה אנימציית החלקה עדינה. |
 | `revealAnswer()` | `private void` | מפעילה אנימציית היפוך תלת-ממדית (Flip) על ציר ה-Y: כרטיס מסתובב ל-90 מעלות, השאלה מתחלפת בתשובה ומוצגים 4 כפתורי דירוג, והכרטיס משלים סיבוב חזרה. |
-| `onRatingSelected(int difficulty, String msg)` | `private void` | מעדכנת את רמת הקושי של הכרטיסייה, מקדמת את מונה החזרות ואת כרטיסיות היום ב-StudyRepository, ומעבירה לכרטיסייה הבאה או פותחת דיאלוג סיום. |
-| `showDeckCompletedDialog()` | `private void` | מציגה דיאלוג סיום כשכל הכרטיסיות בערכה תורגלו, עם אפשרות לחזור ללוח הבקרה או לתרגל שוב מההתחלה. |
+| `onRatingSelected(int difficulty, String msg)` | `private void` | מעדכנת את הכרטיסייה לפי הדירוג (applyRating) ומקדמת את מונה היום והרצף ב-StudyRepository. ב"טוב" או "קל" סופרת תשובה נכונה ומשמיעה צליל משוב. אחר כך מחשבת מחדש את אחוז השליטה, שומרת את הערכה (updateStudySet) ועוברת לכרטיסייה הבאה או לדיאלוג הסיום. |
+| `showDeckCompletedDialog()` | `private void` | מציגה דיאלוג סיום כשכל הכרטיסיות תורגלו, עם הציון (כמה כרטיסיות סומנו "טוב" או "קל" מתוך הכל, ובאחוזים) ועם אפשרות לחזור ללוח הבקרה או לתרגל שוב מההתחלה. |
+| `playSuccessSound()` | `private void` | משמיעה צליל משוב קצר כשהתשובה סומנה "טוב" או "קל", רק אם הצלילים מופעלים בהגדרות. |
+| `onDestroy()` | `protected void` | משחררת את ה-ToneGenerator כשהמסך נסגר. |
 
 ```java
 cardView.animate().rotationY(90f).setDuration(150)
@@ -1139,6 +1161,7 @@ btnDark.setOnClickListener(v -> {
 | `cardsStudiedToday` | `number (int)` | מספר הכרטיסיות שהמשתמש תרגל היום. |
 | `dailyGoal` | `number (int)` | היעד היומי שנקבע (ברירת מחדל 50, טווח תקין 1-2000). |
 | `focusMinutes` | `number (int)` | סך דקות הריכוז והלמידה שנצברו. |
+| `lastStudyDate` | `string` | תאריך הלמידה האחרון בפורמט yyyy-MM-dd (ריק אם עוד לא למדו). |
 | `displayName` | `string` | שם המשתמש המלא שהוזן ברישום או נשלף מחשבון Google. |
 | `email` | `string` | כתובת הדוא"ל המאומתת של המשתמש. |
 | `updatedAt` | `timestamp` | מועד העדכון האחרון של נתוני המשתמש. |
@@ -1178,7 +1201,7 @@ service cloud.firestore {
 
 #### 6.2.3 אחסון מקומי וקאש במכשיר (SharedPreferences & JSON Storage)
 בנוסף למסד הנתונים בענן, האפליקציה מיישמת אחסון מקומי יעיל באמצעות SharedPreferences. הקאש המקומי מנוהל תחת שני קבצים נפרדים:
-1. study_repo_{uid}: מכיל את מחרוזת ה-JSON המלאה (study_sets_json) של כל ערכות הלימוד והכרטיסיות של המשתמש, יחד עם נתוני המונים (streak_days, cards_studied, daily_goal, focus_minutes). שמירה זו מאפשרת לאפליקציה לפעול במודל 'Offline-First' ולהציג נתונים מיד עם הפתיחה ללא השהיית רשת.
+1. study_repo_{uid}: מכיל את מחרוזת ה-JSON המלאה (study_sets_json) של כל ערכות הלימוד והכרטיסיות של המשתמש, יחד עם נתוני המונים (streak_days, cards_studied, daily_goal, focus_minutes, last_study_date). שמירה זו מאפשרת לאפליקציה לפעול במודל 'Offline-First' ולהציג נתונים מיד עם הפתיחה ללא השהיית רשת.
 2. snapstudy_theme_prefs: מכיל את הגדרות המערכת הגלובליות: night_mode, notifications_enabled, reminder_time, sound_enabled.
 
 ---

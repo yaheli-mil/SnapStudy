@@ -23,6 +23,7 @@ package "com.yalig.snapstudy.models" {
         - repetitionCount: int
         - difficulty: int
         + incrementRepetition(): void
+        + applyRating(difficulty: int): void
     }
 
     class StudySet {
@@ -34,6 +35,7 @@ package "com.yalig.snapstudy.models" {
         - flashcards: List<Flashcard>
         + getCardCount(): int
         + addFlashcard(card: Flashcard): void
+        + updateMasteryPercentage(): void
     }
 }
 
@@ -51,6 +53,7 @@ package "com.yalig.snapstudy.data" {
         - dailyGoal: int
         - focusMinutes: int
         - isLoaded: boolean
+        - lastStudyDate: String
         + {static} getInstance(): StudyRepository
         + isLoaded(): boolean
         + loadLocalData(uid: String): void
@@ -63,6 +66,8 @@ package "com.yalig.snapstudy.data" {
         + setDailyGoal(goal: int): void
         + recordCardStudied(): void
         + clearData(): void
+        - rollOverDayIfNeeded(): void
+        - getDateString(daysOffset: int): String
     }
 }
 
@@ -155,10 +160,12 @@ package "com.yalig.snapstudy" {
         - cards: List<Flashcard>
         - currentIndex: int
         - isAnswerRevealed: boolean
+        - correctCount: int
         - displayCurrentCard(): void
         - revealAnswer(): void
         - onRatingSelected(difficulty: int, msg: String): void
         - showDeckCompletedDialog(): void
+        - playSuccessSound(): void
     }
 
     class SettingsActivity {
