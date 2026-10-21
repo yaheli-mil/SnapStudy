@@ -1,48 +1,65 @@
 classDiagram
   direction LR
   class ScannerActivity {
-    -TextRecognizer textRecognizer
-    -DocumentOverlayView documentOverlayView
-    -processImageWithAi(Bitmap bmp) void
+    -DocumentOverlayView overlayView
+    -findText(Bitmap bitmap) void
+    -createCards() void
   }
   class View
   class DocumentOverlayView {
-    -RectF currentRect
-    -String label
-    +setDetectedBounds(RectF rect) void
-    +setLabel(String label) void
-    +clear() void
+    -Bitmap photo
+    -Rect textBounds
+    -Paint framePaint
+    +setPhoto(Bitmap photo) void
+    +setTextBounds(Rect textBounds) void
     #onDraw(Canvas canvas) void
   }
   class GeminiStudyService {
-    -String GEMINI_MODEL$
-    -OkHttpClient httpClient$
-    +generateFlashcardsFromBitmap(Context ctx, Bitmap bmp, AiStudyCallback cb)$ void
-    -parseStudySetFromJson(String json)$ StudySet
-    -scaleBitmapIfNeeded(Bitmap bmp, int maxDim)$ Bitmap
-    -bitmapToBase64Jpeg(Bitmap bmp)$ String
+    -String PROMPT$
+    +generateFlashcards(Activity activity, Bitmap bitmap, AiStudyCallback cb)$ void
+    -buildRequest(String imageBase64)$ JSONObject
+    -sendPost(String url, String body)$ String
+    -parseResponse(String response)$ StudySet
+    -scaleBitmap(Bitmap bitmap, int maxSize)$ Bitmap
+    -bitmapToBase64(Bitmap bitmap)$ String
   }
   class GeminiConfig {
-    +getApiKey(Context ctx)$ String
-    +hasApiKey(Context ctx)$ boolean
+    +String API_KEY$
+    +String MODEL$
   }
   class AiStudyCallback {
     <<interface>>
     +onSuccess(StudySet set) void
     +onError(String message) void
   }
+  class MainActivity
+  class RecyclerViewAdapter["RecyclerView.Adapter"]
+  class StudySetAdapter {
+    -ArrayList~StudySet~ sets
+    -OnSetClickListener listener
+    +setSets(ArrayList~StudySet~ sets) void
+    +onCreateViewHolder(ViewGroup parent, int viewType) SetViewHolder
+    +onBindViewHolder(SetViewHolder holder, int position) void
+    +getItemCount() int
+  }
+  class OnSetClickListener {
+    <<interface>>
+    +onSetClick(StudySet set) void
+  }
   class Application
   class SnapStudyApp {
-    -SnapStudyApp instance$
-    +applySavedTheme(Context ctx)$ void
-    +saveThemeMode(Context ctx, int mode)$ void
+    +getThemeMode(Context ctx)$ int
+    +setThemeMode(Context ctx, int mode)$ void
     +getReminderTime(Context ctx)$ String
     +isSoundEnabled(Context ctx)$ boolean
   }
   View <|-- DocumentOverlayView
+  RecyclerViewAdapter <|-- StudySetAdapter
   Application <|-- SnapStudyApp
-  ScannerActivity "1" *-- "1" DocumentOverlayView : draws frame
+  ScannerActivity "1" *-- "1" DocumentOverlayView : shows photo and frame
   ScannerActivity ..> GeminiStudyService : sends photo
   ScannerActivity ..> AiStudyCallback : anonymous class
   GeminiStudyService ..> GeminiConfig : reads key
   GeminiStudyService ..> AiStudyCallback : returns result
+  MainActivity "1" *-- "1" StudySetAdapter : list of sets
+  StudySetAdapter ..> OnSetClickListener : click on set

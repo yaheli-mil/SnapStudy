@@ -125,7 +125,7 @@
   הכנת כרטיסיות שינון לוקחת הרבה זמן: עוברים על הסיכום, מנסחים שאלות ומקלידים אותן אחת-אחת, ובסוף נשאר מעט זמן לתרגל.
   SnapStudy חוסכת את השלב הזה. מצלמים דף ממחברת או מספר (או בוחרים תמונה מהגלריה), האפליקציה שולחת את התמונה ל-Gemini
   ומקבלת בחזרה ערכה של שאלות ותשובות. אחר כך מתרגלים עם כרטיסיות שמתהפכות, מדרגים כמה כל שאלה הייתה קשה,
-  והאפליקציה עוקבת אחרי רצף ימי הלימוד והיעד היומי. הערכות נשמרות בטלפון ובענן (Firebase), כך שהן מחכות בכל התחברות.
+  והאפליקציה עוקבת אחרי רצף ימי הלימוד והיעד היומי. הערכות נשמרות בענן (Firebase), כך שהן מחכות בכל התחברות.
   <b>קהל יעד:</b> תלמידי תיכון וסטודנטים שמתכוננים למבחנים.
 </p>
 
@@ -171,8 +171,8 @@
     <tr><td class="c">24</td><td>ספר הפרויקט: פרק הארכיטקטורה ותרשים המחלקות</td><td class="c">#8</td><td class="c"><span class="tag">docs</span></td><td class="c">3</td><td class="c done">סגור</td></tr>
     <tr><td class="c">25</td><td>ספר הפרויקט: תרשים זרימת המסכים ומדריך למשתמש</td><td class="c">#8</td><td class="c"><span class="tag">docs</span></td><td class="c">3</td><td class="c done">סגור</td></tr>
     <tr><td class="c">26</td><td>בדיקות: בלי רשת, בלי הרשאת מצלמה, צילום מטושטש, ותיקון הבאגים שנמצאו</td><td class="c">#8</td><td class="c"><span class="tag">qa</span></td><td class="c">4</td><td class="c">פתוח</td></tr>
-    <tr><td class="c">35</td><td>דקות הריכוז בלוח הבקרה לא מתעדכנות (תמיד 0)</td><td class="c">#8</td><td class="c"><span class="tag">bug</span></td><td class="c">2</td><td class="c">פתוח</td></tr>
-    <tr><td class="c">36</td><td>מצב הפלאש "אוטו" בסורק לא עובד (מתנהג כמו כבוי)</td><td class="c">#8</td><td class="c"><span class="tag">bug</span></td><td class="c">1</td><td class="c">פתוח</td></tr>
+    <tr><td class="c">35</td><td>דקות הריכוז בלוח הבקרה לא מתעדכנות (תמיד 0)</td><td class="c">#8</td><td class="c"><span class="tag">bug</span></td><td class="c">2</td><td class="c done">סגור</td></tr>
+    <tr><td class="c">36</td><td>מצב הפלאש "אוטו" בסורק לא עובד (מתנהג כמו כבוי)</td><td class="c">#8</td><td class="c"><span class="tag">bug</span></td><td class="c">1</td><td class="c">בוטל</td></tr>
 
     <tr class="total"><td></td><td>סה"כ עד אבן הדרך של 80%</td><td></td><td></td><td class="c">76</td><td></td></tr>
 
@@ -199,7 +199,7 @@
   <ul>
     <li>התמונה מוקטנת כך שהצלע הארוכה היא עד 1280 פיקסלים, ונשלחת כ-JPEG בקידוד Base64 למודל <code>gemini-2.5-flash</code>.</li>
     <li>בבקשה מוגדר <code>response_mime_type: application/json</code>, והתשובה מפוענחת ל-StudySet עם כותרת ורשימת Flashcard.</li>
-    <li>הבקשה נשלחת ברקע עם OkHttp, והתוצאה חוזרת למסך דרך AiStudyCallback (onSuccess או onError) ב-Main Thread.</li>
+    <li>הבקשה נשלחת ב-Thread נפרד עם HttpURLConnection, והתוצאה חוזרת למסך דרך AiStudyCallback (onSuccess או onError) ב-Main Thread.</li>
     <li>כשאין רשת או שהתשובה לא תקינה מוצגת הודעת שגיאה עם כפתור "נסה שוב", והאפליקציה לא קורסת.</li>
     <li>נבדק על שלושה סוגי דפים: מחברת בכתב יד, דף מודפס ותמונה מהגלריה.</li>
   </ul>
@@ -227,12 +227,13 @@
     <tr><td class="c">10</td><td class="c">6.12–12.12</td><td>#21 (סיום), #22 Streak ויעד יומי</td><td class="c">4</td><td class="c done">הושלם מוקדם</td></tr>
     <tr><td class="c">11</td><td class="c">13.12–19.12</td><td>#23 מסך ההגדרות, #24 ספר: פרק ארכיטקטורה</td><td class="c">6</td><td class="c done">הושלם מוקדם</td></tr>
     <tr><td class="c">12</td><td class="c">20.12–26.12</td><td>#25 ספר: תרשים מסכים ומדריך למשתמש, #26 בדיקות (התחלה)</td><td class="c">6</td><td class="c">#25 הושלם</td></tr>
-    <tr class="total"><td class="c">13</td><td class="c">27.12–1.1</td><td>#26 (סיום), #35 דקות ריכוז, #36 מצב פלאש</td><td class="c">4</td><td class="c">הגשת 80%</td></tr>
+    <tr class="total"><td class="c">13</td><td class="c">27.12–1.1</td><td>#26 (סיום), #35 דקות ריכוז (הושלם), #36 מצב פלאש (בוטל)</td><td class="c">4</td><td class="c">הגשת 80%</td></tr>
   </tbody>
 </table>
 <p class="note">
   כל Issue מהטבלה הקודמת מופיע כאן, וסכום השעות זהה: 76 (שעות הרזרבה הוקצו ל-#35 ו-#36).
   עדכון 21.10: הקוד של #9–#25 כבר מוכן ונבדק, ולכן השבועות שלהם מסומנים "הושלם מוקדם".
+  באותו יום הקוד גם פושט: הסורק משתמש עכשיו באפליקציית המצלמה של הטלפון במקום CameraX, ולכן הצילום האוטומטי והפלאש (#16, #36) ירדו.
 </p>
 
 <h3>הגדרת אבן הדרך של 80%</h3>
@@ -241,14 +242,14 @@
   <tbody><tr>
     <td><ul>
       <li>הרשמה והתחברות (אימייל וסיסמה, Google), כולל שחזור סיסמה</li>
-      <li>צילום דף או בחירה מהגלריה, עם זיהוי הדף וצילום אוטומטי</li>
+      <li>צילום דף במצלמת הטלפון או בחירה מהגלריה, עם סימון הטקסט שזוהה</li>
       <li>יצירת ערכת כרטיסיות מהתמונה בעזרת Gemini</li>
-      <li>שמירת הערכות בטלפון וב-Firestore, וטעינה מחדש אחרי התחברות</li>
+      <li>שמירת הערכות ב-Firestore, וטעינה מחדש אחרי התחברות</li>
       <li>תרגול עם כרטיסייה מתהפכת ודירוג קושי</li>
       <li>לוח בקרה עם חיפוש, Streak ויעד יומי</li>
       <li>מסך הגדרות: ערכת נושא, יעד יומי, שעת תזכורת, צלילים</li>
       <li>פרק ארכיטקטורה ותרשים זרימת מסכים בספר הפרויקט</li>
-      <li>דקות ריכוז שמתעדכנות בלוח הבקרה, ופלאש אוטומטי בסורק (#35, #36)</li>
+      <li>דקות ריכוז שמתעדכנות בלוח הבקרה (#35)</li>
     </ul></td>
     <td><ul>
       <li>התראה יומית בשעת התזכורת (#27)</li>
@@ -268,13 +269,14 @@
 </p>
 
 <h3>4.1 שכבת הנתונים (המודל) – המחלקות שמחזיקות את המידע שנשמר בטלפון וב-Firestore</h3>
-<figure><img src="diagrams/data_layer.svg" style="width:100%" alt="תרשים מחלקות – שכבת הנתונים"></figure>
+<figure><img src="diagrams/data_layer.svg" style="width:88%" alt="תרשים מחלקות – שכבת הנתונים"></figure>
 <ul class="rel">
-  <li><b>StudyRepository ו-StudySet (צבירה, <span class="ltr">1</span> ל-<span class="ltr">0..*</span>):</b> המאגר מחזיק את כל הערכות של המשתמש המחובר.
-    הוא Singleton – יש ממנו עותק אחד באפליקציה (<code>getInstance()</code>), וכל המסכים עובדים מולו.</li>
+  <li><b>StudyRepository:</b> מחלקת עזר עם פעולות static שטוענת ושומרת את הערכות של המשתמש המחובר ב-Firestore.
+    לא צריך ליצור ממנה אובייקט – כל מסך קורא ישירות ל-<code>StudyRepository.loadSets()</code> או ל-<code>saveSet()</code>.</li>
   <li><b>StudySet ו-Flashcard (הכלה, <span class="ltr">1</span> ל-<span class="ltr">0..*</span>):</b> כל ערכה מכילה רשימת כרטיסיות. כרטיסייה לא קיימת בלי הערכה שלה,
     וב-Firestore היא נשמרת בתוך מסמך הערכה: <code>users/{uid}/study_sets/{setId}</code>.</li>
-  <li><b>DataCallback:</b> ממשק קטן שדרכו StudyRepository מודיע למסך שהסנכרון מול Firestore הסתיים.</li>
+  <li><b>SetsCallback:</b> ממשק קטן שדרכו StudyRepository מחזירה למסך את רשימת הערכות כשהטעינה מ-Firestore מסתיימת.</li>
+  <li><b>StatsManager:</b> שומרת בטלפון (SharedPreferences) את רצף הימים, הכרטיסיות של היום, היעד היומי וזמן הריכוז.</li>
 </ul>
 
 <section class="wide">
@@ -282,20 +284,20 @@
   <figure><img src="diagrams/view_layer.svg" style="width:100%" alt="תרשים מחלקות – המסכים"></figure>
   <ul class="rel">
     <li>כל המסכים יורשים מ-AppCompatActivity (משולש ריק, החץ מהבן אל האב). מחלקת האב מצוירת עם שם בלבד.</li>
-    <li>LoginActivity עובד ישירות מול FirebaseAuth ולא צריך את המאגר. ארבעת המסכים האחרים לא ניגשים ל-Firestore בעצמם – הם עוברים דרך StudyRepository,
-      כך שכל קוד השמירה והסנכרון נמצא במקום אחד.</li>
+    <li>LoginActivity עובד ישירות מול FirebaseAuth. שאר המסכים לא ניגשים ל-Firestore בעצמם אלא דרך StudyRepository,
+      ואת הסטטיסטיקות הם קוראים ושומרים דרך StatsManager, כך שכל קוד השמירה נמצא במקום אחד.</li>
     <li>לכל מסך בתרשים זרימת המסכים (פרק 5) יש מחלקה כאן, והדיאלוגים הם חלק מה-Activity שפותח אותם.</li>
   </ul>
 </section>
 
 <section class="wide">
   <h3 style="margin-top:0">4.3 שירותים ומחלקות עזר – מצלמה, AI והגדרות האפליקציה</h3>
-  <figure><img src="diagrams/services.svg" style="width:96%" alt="תרשים מחלקות – שירותים"></figure>
+  <figure><img src="diagrams/services.svg" style="max-height:132mm; width:auto" alt="תרשים מחלקות – שירותים"></figure>
   <ul class="rel">
-    <li><b>ScannerActivity מכיל DocumentOverlayView (הכלה):</b> תצוגה שיורשת מ-View ומציירת ב-<code>onDraw()</code> את המסגרת סביב הדף ש-ML Kit זיהה.</li>
+    <li><b>ScannerActivity מכיל DocumentOverlayView (הכלה):</b> תצוגה שיורשת מ-View ומציירת ב-<code>onDraw()</code> את התמונה שצולמה ואת המסגרת סביב הטקסט ש-ML Kit זיהה.</li>
     <li><b>ScannerActivity ו-GeminiStudyService:</b> הסורק שולח את התמונה לשירות, והתשובה חוזרת דרך הממשק AiStudyCallback – <code>onSuccess</code> עם StudySet חדש או <code>onError</code> עם הודעה למשתמש.</li>
     <li>GeminiConfig מחזיק את מפתח ה-API, ו-SnapStudyApp (יורש מ-Application) טוען את ערכת הנושא וההגדרות כשהאפליקציה עולה.</li>
-    <li>ViewAnimationUtils (אנימציות של מעבר ולחיצה) לא מופיעה בתרשים: זו מחלקת עזר עם פעולות static שכל המסכים משתמשים בהן.</li>
+    <li><b>StudySetAdapter</b> (יורש מ-RecyclerView.Adapter) מציג את רשימת הערכות במסך הראשי, ומודיע על לחיצה על ערכה דרך הממשק OnSetClickListener.</li>
   </ul>
 </section>
 
@@ -340,6 +342,13 @@
       <td>ביקשתי מ-Claude לבדוק מה כבר מומש בקוד, לעדכן לפי זה את ה-Issues ואת המסמכים, ולבדוק אם פספסתי משהו.</td>
       <td>‏#9–#25 נסגרו עם הערה על מה שנבדק בקוד. נמצאו שני פערים שנפתחו כ-Issues: דקות הריכוז לא מתעדכנות (#35), ומצב פלאש "אוטו" לא עובד (#36).
         גם תרשים המחלקות וספר הפרויקט עודכנו לפי השינויים האחרונים בקוד.</td>
+    </tr>
+    <tr>
+      <td class="c">21.10.2026</td>
+      <td>ביקשתי מ-Claude לפשט את הקוד כך שיתאים לרמה של תלמיד י"ב.</td>
+      <td>CameraX הוחלף באפליקציית המצלמה של הטלפון, OkHttp הוחלף ב-HttpURLConnection, והמאגר כבר לא Singleton ולא שומר קאש בטלפון.
+        נוספו StatsManager (סטטיסטיקות) ו-StudySetAdapter (רשימת הערכות ב-RecyclerView). דקות הריכוז נמדדות עכשיו (#35), והפלאש בוטל (#36).
+        האפליקציה נבדקה באמולטור מצילום ועד תרגול, והתרשימים וספר הפרויקט עודכנו.</td>
     </tr>
   </tbody>
 </table>
