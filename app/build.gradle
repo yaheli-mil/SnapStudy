@@ -42,7 +42,6 @@ dependencies {
     implementation platform(libs.firebase.bom)
     implementation libs.firebase.auth
     implementation libs.firebase.firestore
-    implementation 'com.firebaseui:firebase-ui-auth:9.0.0'
 
     // Google Credential Manager for Modern Sign-In
     implementation libs.credentials
@@ -52,16 +51,10 @@ dependencies {
     // Image loading
     implementation libs.glide
 
-    // CameraX
-    implementation libs.camera.core
-    implementation libs.camera.camera2
-    implementation libs.camera.lifecycle
-    implementation libs.camera.view
+    // RecyclerView for the list of study sets
+    implementation libs.recyclerview
 
-    // OkHttp for networking
-    implementation libs.okhttp
-
-    // ML Kit Text Recognition for real-time document detection
+    // ML Kit Text Recognition (finds the text area in the photo)
     implementation 'com.google.android.gms:play-services-mlkit-text-recognition:19.0.1'
 
     testImplementation libs.junit
