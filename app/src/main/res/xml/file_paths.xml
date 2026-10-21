@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- התיקייה שאפליקציית המצלמה מקבלת גישה אליה כדי לשמור את התמונה -->
+<paths>
+    <cache-path
+        name="photos"
+        path="." />
+</paths>

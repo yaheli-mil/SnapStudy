@@ -7,14 +7,11 @@ service cloud.firestore {
     // ===============================================================
     //
     // Collection: users/{userId}
-    // Fields:
-    //   - streakDays: number (>= 0)
-    //   - cardsStudiedToday: number (>= 0)
-    //   - dailyGoal: number (>= 0)
-    //   - focusMinutes: number (>= 0)
-    //   - lastStudyDate: string ("yyyy-MM-dd" or empty)
-    //   - displayName: string (optional, <= 100)
-    //   - email: string (optional, <= 100)
+    //   The app does not write fields to this document right now: the learning
+    //   stats are kept on the phone (StatsManager). isValidUserData() still
+    //   checks these fields if they are ever written: streakDays,
+    //   cardsStudiedToday, dailyGoal, focusMinutes, lastStudyDate,
+    //   displayName, email.
     //
     // Subcollection: users/{userId}/study_sets/{setId}
     // Fields:

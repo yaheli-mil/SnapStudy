@@ -10,6 +10,7 @@ package "Android / Java" {
     class AppCompatActivity
     class View
     class Application
+    class "RecyclerView.Adapter" as RecyclerViewAdapter
     interface Serializable
 }
 
@@ -40,138 +41,130 @@ package "com.yalig.snapstudy.models" {
 }
 
 package "com.yalig.snapstudy.data" {
-    interface DataCallback {
-        + onComplete(): void
+    interface SetsCallback {
+        + onSetsLoaded(sets: ArrayList<StudySet>): void
     }
 
-    class StudyRepository <<singleton>> {
-        - {static} instance: StudyRepository
-        - db: FirebaseFirestore
-        - studySets: List<StudySet>
-        - streakDays: int
-        - cardsStudiedToday: int
-        - dailyGoal: int
-        - focusMinutes: int
-        - isLoaded: boolean
-        - lastStudyDate: String
-        + {static} getInstance(): StudyRepository
-        + isLoaded(): boolean
-        + loadLocalData(uid: String): void
-        + saveLocalData(uid: String): void
-        + syncWithFirestore(callback: DataCallback): void
-        + getAllStudySets(): List<StudySet>
-        + getStudySetById(id: String): StudySet
-        + addStudySet(set: StudySet): void
-        + updateStudySet(set: StudySet): void
-        + setDailyGoal(goal: int): void
-        + recordCardStudied(): void
-        + clearData(): void
-        - rollOverDayIfNeeded(): void
-        - getDateString(daysOffset: int): String
+    class StudyRepository {
+        + {static} loadSets(callback: SetsCallback): void
+        + {static} saveSet(set: StudySet): void
+        - {static} getSetsCollection(): CollectionReference
+    }
+
+    class StatsManager {
+        - {static} PREFS_NAME: String
+        + {static} recordCardStudied(ctx: Context): void
+        + {static} getCardsToday(ctx: Context): int
+        + {static} getStreakDays(ctx: Context): int
+        + {static} getDailyGoal(ctx: Context): int
+        + {static} setDailyGoal(ctx: Context, goal: int): void
+        + {static} getFocusMinutes(ctx: Context): int
+        + {static} addFocusSeconds(ctx: Context, seconds: int): void
     }
 }
 
 package "com.yalig.snapstudy.ai" {
     class GeminiConfig {
-        + {static} getApiKey(context: Context): String
-        + {static} hasApiKey(context: Context): boolean
+        + {static} API_KEY: String
+        + {static} MODEL: String
     }
 
     interface AiStudyCallback {
         + onSuccess(studySet: StudySet): void
-        + onError(errorMessage: String): void
+        + onError(message: String): void
     }
 
     class GeminiStudyService {
-        - {static} GEMINI_MODEL: String
-        - {static} httpClient: OkHttpClient
-        + {static} generateFlashcardsFromBitmap(ctx: Context, bmp: Bitmap, cb: AiStudyCallback): void
-        - {static} parseStudySetFromJson(json: String): StudySet
-        - {static} scaleBitmapIfNeeded(bmp: Bitmap, maxDimension: int): Bitmap
-        - {static} bitmapToBase64Jpeg(bmp: Bitmap): String
+        - {static} PROMPT: String
+        + {static} generateFlashcards(activity: Activity, bitmap: Bitmap, callback: AiStudyCallback): void
+        - {static} buildRequest(imageBase64: String): JSONObject
+        - {static} sendPost(url: String, body: String): String
+        - {static} parseResponse(response: String): StudySet
+        - {static} scaleBitmap(bitmap: Bitmap, maxSize: int): Bitmap
+        - {static} bitmapToBase64(bitmap: Bitmap): String
     }
 }
 
 package "com.yalig.snapstudy.ui" {
     class DocumentOverlayView {
-        - currentRect: RectF
-        - label: String
-        + setLabel(label: String): void
-        + setDetectedBounds(rect: RectF): void
-        + clear(): void
+        - photo: Bitmap
+        - textBounds: Rect
+        - framePaint: Paint
+        + setPhoto(photo: Bitmap): void
+        + setTextBounds(textBounds: Rect): void
         # onDraw(canvas: Canvas): void
     }
-}
 
-package "com.yalig.snapstudy.utils" {
-    class ViewAnimationUtils <<utility>> {
-        + {static} applyTouchScaleEffect(view: View): void
-        + {static} animateStaggeredEntrance(view: View, delayMs: long): void
-        + {static} startActivityWithTransition(activity: Activity, intent: Intent): void
-        + {static} finishWithTransition(activity: Activity): void
+    interface OnSetClickListener {
+        + onSetClick(set: StudySet): void
+    }
+
+    class StudySetAdapter {
+        - sets: ArrayList<StudySet>
+        - listener: OnSetClickListener
+        + setSets(sets: ArrayList<StudySet>): void
+        + onCreateViewHolder(parent: ViewGroup, viewType: int): SetViewHolder
+        + onBindViewHolder(holder: SetViewHolder, position: int): void
+        + getItemCount(): int
     }
 }
 
 package "com.yalig.snapstudy" {
     class SnapStudyApp {
-        - {static} instance: SnapStudyApp
-        + {static} getInstance(): SnapStudyApp
-        + {static} applySavedTheme(context: Context): void
-        + {static} saveThemeMode(context: Context, mode: int): void
-        + {static} isNotificationsEnabled(context: Context): boolean
-        + {static} getReminderTime(context: Context): String
-        + {static} isSoundEnabled(context: Context): boolean
+        - {static} PREFS_NAME: String
+        + {static} getThemeMode(ctx: Context): int
+        + {static} setThemeMode(ctx: Context, mode: int): void
+        + {static} isReminderEnabled(ctx: Context): boolean
+        + {static} getReminderTime(ctx: Context): String
+        + {static} isSoundEnabled(ctx: Context): boolean
     }
 
     class LoginActivity {
-        - mAuth: FirebaseAuth
-        - credentialManager: CredentialManager
+        - auth: FirebaseAuth
         - isSignUpMode: boolean
-        - handleEmailAuth(): void
+        - setSignUpMode(signUp: boolean): void
+        - signIn(): void
+        - signUp(): void
+        - showForgotPasswordDialog(): void
         - signInWithGoogle(): void
-        - firebaseAuthWithGoogle(idToken: String): void
-        - handleForgotPassword(): void
-        - navigateToMain(): void
+        - goToMain(): void
     }
 
     class MainActivity {
+        - allSets: ArrayList<StudySet>
+        - adapter: StudySetAdapter
         - etSearch: EditText
-        - currentSearch: String
-        - updateUserProfile(user: FirebaseUser): void
-        - refreshUI(): void
-        - refreshMetrics(): void
-        - populateStudySets(query: String): void
+        # onResume(): void
+        - showStats(): void
+        - showSets(): void
         - showCreateSetDialog(): void
     }
 
     class ScannerActivity {
-        - cameraPreview: PreviewView
-        - textRecognizer: TextRecognizer
-        - documentOverlayView: DocumentOverlayView
-        - isAutoMode: boolean
-        - startCamera(): void
-        - analyzeImageForDocument(imageProxy: ImageProxy): void
-        - takePhotoAndProcess(): void
-        - processImageWithAi(bitmap: Bitmap): void
+        - overlayView: DocumentOverlayView
+        - photo: Bitmap
+        - cameraPhotoUri: Uri
+        - openCamera(): void
+        - loadPhoto(uri: Uri): void
+        - findText(bitmap: Bitmap): void
+        - createCards(): void
     }
 
     class FlashcardsActivity {
         - studySet: StudySet
-        - cards: List<Flashcard>
         - currentIndex: int
-        - isAnswerRevealed: boolean
         - correctCount: int
-        - displayCurrentCard(): void
+        - startTime: long
+        - showCard(): void
         - revealAnswer(): void
-        - onRatingSelected(difficulty: int, msg: String): void
-        - showDeckCompletedDialog(): void
-        - playSuccessSound(): void
+        - rateCard(difficulty: int): void
+        - showFinishDialog(): void
     }
 
     class SettingsActivity {
-        - updateThemeButtonsUI(mode: int): void
-        - showTimePickerDialog(tvReminderTime: TextView): void
-        - showEditDailyGoalDialog(badge: TextView): void
+        - changeTheme(mode: int): void
+        - showDailyGoalDialog(): void
+        - showTimePicker(): void
     }
 }
 
@@ -182,27 +175,31 @@ AppCompatActivity <|-- ScannerActivity
 AppCompatActivity <|-- FlashcardsActivity
 AppCompatActivity <|-- SettingsActivity
 View <|-- DocumentOverlayView
+RecyclerViewAdapter <|-- StudySetAdapter
 Application <|-- SnapStudyApp
 Serializable <|.. Flashcard
 Serializable <|.. StudySet
 
-' Composition, aggregation and nested interfaces
+' Composition and aggregation
 StudySet "1" *-- "0..*" Flashcard : contains
-StudyRepository "1" o-- "0..*" StudySet : manages
-StudyRepository +-- DataCallback
-GeminiStudyService +-- AiStudyCallback
-ScannerActivity "1" *-- "1" DocumentOverlayView : draws frame
+StudySetAdapter "1" o-- "0..*" StudySet : shows
+ScannerActivity "1" *-- "1" DocumentOverlayView : shows photo and frame
+MainActivity "1" *-- "1" StudySetAdapter : list of sets
 
 ' Dependencies
+StudyRepository ..> StudySet : loads and saves
+StudyRepository ..> SetsCallback : returns sets
 GeminiStudyService ..> GeminiConfig : reads API key
 GeminiStudyService ..> StudySet : creates
-ScannerActivity ..> GeminiStudyService : AI analysis
-ScannerActivity ..> AiStudyCallback : anonymous implementation
+GeminiStudyService ..> AiStudyCallback : returns result
+ScannerActivity ..> GeminiStudyService : sends photo
+ScannerActivity ..> AiStudyCallback : anonymous class
 ScannerActivity ..> StudyRepository : saves set
-MainActivity ..> StudyRepository : sync & fetch
-FlashcardsActivity ..> StudyRepository : updates progress
-SettingsActivity ..> StudyRepository : updates daily goal
-SettingsActivity ..> SnapStudyApp : theme & reminder
+MainActivity ..> StudyRepository : loads sets
+FlashcardsActivity ..> StudyRepository : saves progress
+FlashcardsActivity ..> StatsManager : updates stats
+SettingsActivity ..> StatsManager : daily goal
+StudySetAdapter ..> OnSetClickListener : click on set
 LoginActivity ..> MainActivity : opens
 MainActivity ..> ScannerActivity : opens
 MainActivity ..> FlashcardsActivity : opens

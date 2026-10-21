@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
+    android:fitsSystemWindows="true"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background"
@@ -110,7 +111,7 @@
             android:paddingTop="6dp"
             android:paddingBottom="24dp">
 
-            <!-- Optional Greeting (Hidden by default) -->
+            <!-- Greeting with the user name -->
             <TextView
                 android:id="@+id/tvGreeting"
                 android:layout_width="match_parent"
@@ -119,8 +120,7 @@
                 android:fontFamily="@font/heebo_bold"
                 android:textColor="@color/slate_900"
                 android:textSize="16sp"
-                android:textStyle="bold"
-                android:visibility="gone" />
+                android:textStyle="bold" />
 
             <!-- Welcome Greeting Banner -->
             <TextView
@@ -393,7 +393,7 @@
                         android:fontFamily="@font/heebo_regular"
                         android:gravity="center"
                         android:lineSpacingMultiplier="1.25"
-                        android:text="סרוק סיכומי שיעור עם המצלמה, העלה קובץ PDF או כרטיסיות ידנית כדי להתחיל לתרגל."
+                        android:text="צלם דף סיכום, בחר תמונה מהגלריה או צור ערכה ידנית כדי להתחיל לתרגל."
                         android:textColor="@color/slate_500"
                         android:textSize="12.5sp" />
 
@@ -457,6 +457,7 @@
 
                         <TextView
                             android:id="@+id/tvTipContent"
+                            android:text="טיפ מהיר: האפליקציה תסכם עבורך דפי מחברת ותייצר כרטיסיות חזרה באופן אוטומטי!"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -507,12 +508,22 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- Dynamic Study Sets Container -->
-                <LinearLayout
-                    android:id="@+id/llStudySetsContainer"
+                <!-- Study Sets List (RecyclerView + StudySetAdapter) -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvStudySets"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical" />
+                    android:nestedScrollingEnabled="false" />
+
+                <TextView
+                    android:id="@+id/tvNoResults"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:text="לא נמצאו ערכות שמתאימות לחיפוש."
+                    android:textColor="@color/outline"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
 
                 <!-- Quick Action Buttons -->
                 <LinearLayout
