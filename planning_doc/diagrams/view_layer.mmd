@@ -2,57 +2,62 @@ classDiagram
   direction TB
   class AppCompatActivity
   class LoginActivity {
-    -FirebaseAuth mAuth
-    -CredentialManager credentialManager
+    -FirebaseAuth auth
     -boolean isSignUpMode
-    -handleEmailAuth() void
+    -setSignUpMode(boolean signUp) void
+    -signIn() void
+    -signUp() void
+    -showForgotPasswordDialog() void
     -signInWithGoogle() void
-    -handleForgotPassword() void
-    -navigateToMain() void
+    -goToMain() void
   }
   class MainActivity {
+    -ArrayList~StudySet~ allSets
+    -StudySetAdapter adapter
     -EditText etSearch
-    -String currentSearch
-    -refreshMetrics() void
-    -populateStudySets(String query) void
+    #onResume() void
+    -showStats() void
+    -showSets() void
     -showCreateSetDialog() void
   }
   class ScannerActivity {
-    -PreviewView cameraPreview
-    -TextRecognizer textRecognizer
-    -DocumentOverlayView documentOverlayView
-    -boolean isAutoMode
-    -startCamera() void
-    -analyzeImageForDocument(ImageProxy img) void
-    -takePhotoAndProcess() void
-    -processImageWithAi(Bitmap bmp) void
+    -DocumentOverlayView overlayView
+    -Bitmap photo
+    -Uri cameraPhotoUri
+    -openCamera() void
+    -loadPhoto(Uri uri) void
+    -findText(Bitmap bitmap) void
+    -createCards() void
   }
   class FlashcardsActivity {
     -StudySet studySet
     -int currentIndex
-    -boolean isAnswerRevealed
     -int correctCount
-    -displayCurrentCard() void
+    -long startTime
+    -showCard() void
     -revealAnswer() void
-    -onRatingSelected(int difficulty, String msg) void
-    -showDeckCompletedDialog() void
-    -playSuccessSound() void
+    -rateCard(int difficulty) void
+    -showFinishDialog() void
   }
   class SettingsActivity {
-    -updateThemeButtonsUI(int mode) void
-    -showTimePickerDialog(TextView tv) void
-    -showEditDailyGoalDialog(TextView badge) void
+    -changeTheme(int mode) void
+    -showDailyGoalDialog() void
+    -showTimePicker() void
   }
   class StudyRepository {
-    <<singleton>>
-    +getInstance()$ StudyRepository
+    +loadSets(SetsCallback callback)$ void
+    +saveSet(StudySet set)$ void
+  }
+  class StatsManager {
+    +recordCardStudied(Context ctx)$ void
   }
   AppCompatActivity <|-- LoginActivity
   AppCompatActivity <|-- MainActivity
   AppCompatActivity <|-- ScannerActivity
   AppCompatActivity <|-- FlashcardsActivity
   AppCompatActivity <|-- SettingsActivity
-  MainActivity ..> StudyRepository : uses
-  ScannerActivity ..> StudyRepository : uses
-  FlashcardsActivity ..> StudyRepository : uses
-  SettingsActivity ..> StudyRepository : uses
+  MainActivity ..> StudyRepository : loads sets
+  ScannerActivity ..> StudyRepository : saves set
+  FlashcardsActivity ..> StudyRepository : saves progress
+  FlashcardsActivity ..> StatsManager : updates stats
+  SettingsActivity ..> StatsManager : daily goal

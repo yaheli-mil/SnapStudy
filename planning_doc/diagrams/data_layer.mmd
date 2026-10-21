@@ -1,34 +1,23 @@
 classDiagram
   direction LR
   class StudyRepository {
-    <<singleton>>
-    -StudyRepository instance$
-    -FirebaseFirestore db
-    -List~StudySet~ studySets
-    -int streakDays
-    -int cardsStudiedToday
-    -int dailyGoal
-    -int focusMinutes
-    -boolean isLoaded
-    -String lastStudyDate
-    +getInstance()$ StudyRepository
-    +isLoaded() boolean
-    +loadLocalData(String uid) void
-    +saveLocalData(String uid) void
-    +syncWithFirestore(DataCallback cb) void
-    +getAllStudySets() List~StudySet~
-    +getStudySetById(String id) StudySet
-    +addStudySet(StudySet set) void
-    +updateStudySet(StudySet set) void
-    +setDailyGoal(int goal) void
-    +recordCardStudied() void
-    +clearData() void
-    -rollOverDayIfNeeded() void
-    -getDateString(int daysOffset) String
+    +loadSets(SetsCallback callback)$ void
+    +saveSet(StudySet set)$ void
+    -getSetsCollection()$ CollectionReference
   }
-  class DataCallback {
+  class SetsCallback {
     <<interface>>
-    +onComplete() void
+    +onSetsLoaded(ArrayList~StudySet~ sets) void
+  }
+  class StatsManager {
+    -String PREFS_NAME$
+    +recordCardStudied(Context ctx)$ void
+    +getCardsToday(Context ctx)$ int
+    +getStreakDays(Context ctx)$ int
+    +getDailyGoal(Context ctx)$ int
+    +setDailyGoal(Context ctx, int goal)$ void
+    +getFocusMinutes(Context ctx)$ int
+    +addFocusSeconds(Context ctx, int seconds)$ void
   }
   class StudySet {
     -String id
@@ -52,6 +41,6 @@ classDiagram
     +incrementRepetition() void
     +applyRating(int difficulty) void
   }
-  StudyRepository "1" o-- "0..*" StudySet : manages
+  StudyRepository ..> StudySet : loads and saves
+  StudyRepository ..> SetsCallback : returns sets
   StudySet "1" *-- "0..*" Flashcard : contains
-  StudyRepository ..> DataCallback : notifies

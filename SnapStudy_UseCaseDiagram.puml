@@ -26,7 +26,7 @@ rectangle "מערכת SnapStudy (אפליקציית אנדרואיד)" {
     
     package "סריקה ועיבוד AI" {
         usecase "סריקת מסמך / מחברת במצלמה" as UC_Scan
-        usecase "זיהוי טקסט בזמן אמת בפריים" as UC_MLDetect
+        usecase "זיהוי אזור הטקסט בתמונה" as UC_MLDetect
         usecase "ייבוא תמונת סיכום מגלריה" as UC_Gallery
         usecase "יצירת כרטיסיות אוטומטית ע''י AI" as UC_GenerateAI
         usecase "פענוח JSON והפקת שאלות ותשובות" as UC_ParseAI
