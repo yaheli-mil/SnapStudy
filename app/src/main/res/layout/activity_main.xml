@@ -394,7 +394,7 @@
                         android:fontFamily="@font/heebo_regular"
                         android:gravity="center"
                         android:lineSpacingMultiplier="1.25"
-                        android:text="סרוק סיכומי שיעור עם המצלמה, העלה קובץ PDF או כרטיסיות ידנית כדי להתחיל לתרגל."
+                        android:text="צלם דף סיכום, בחר תמונה מהגלריה או צור ערכה ידנית כדי להתחיל לתרגל."
                         android:textColor="@color/slate_500"
                         android:textSize="12.5sp" />
 
