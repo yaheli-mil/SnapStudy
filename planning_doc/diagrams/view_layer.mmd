@@ -31,10 +31,12 @@ classDiagram
     -StudySet studySet
     -int currentIndex
     -boolean isAnswerRevealed
+    -int correctCount
     -displayCurrentCard() void
     -revealAnswer() void
     -onRatingSelected(int difficulty, String msg) void
     -showDeckCompletedDialog() void
+    -playSuccessSound() void
   }
   class SettingsActivity {
     -updateThemeButtonsUI(int mode) void

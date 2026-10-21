@@ -10,6 +10,7 @@ classDiagram
     -int dailyGoal
     -int focusMinutes
     -boolean isLoaded
+    -String lastStudyDate
     +getInstance()$ StudyRepository
     +isLoaded() boolean
     +loadLocalData(String uid) void
@@ -22,6 +23,8 @@ classDiagram
     +setDailyGoal(int goal) void
     +recordCardStudied() void
     +clearData() void
+    -rollOverDayIfNeeded() void
+    -getDateString(int daysOffset) String
   }
   class DataCallback {
     <<interface>>
@@ -36,6 +39,7 @@ classDiagram
     -List~Flashcard~ flashcards
     +getCardCount() int
     +addFlashcard(Flashcard card) void
+    +updateMasteryPercentage() void
   }
   class Flashcard {
     -String id
@@ -46,6 +50,7 @@ classDiagram
     -int repetitionCount
     -int difficulty
     +incrementRepetition() void
+    +applyRating(int difficulty) void
   }
   StudyRepository "1" o-- "0..*" StudySet : manages
   StudySet "1" *-- "0..*" Flashcard : contains
