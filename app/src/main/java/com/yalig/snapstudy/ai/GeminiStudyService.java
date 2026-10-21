@@ -1,11 +1,8 @@
 package com.yalig.snapstudy.ai;
 
-import android.content.Context;
+import android.app.Activity;
 import android.graphics.Bitmap;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Base64;
-import android.util.Log;
 
 import com.yalig.snapstudy.models.Flashcard;
 import com.yalig.snapstudy.models.StudySet;
@@ -13,294 +10,158 @@ import com.yalig.snapstudy.models.StudySet;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 
 /**
- * שירות עיבוד ובינה מלאכותית מול מנוע Google Gemini (גרסת gemini-2.5-flash).
- * מחלקה זו אחראית על:
- * 1. קבלת תמונת מסמך (Bitmap) ממצלמת האפליקציה או מהגלריה.
- * 2. כיווץ והמרת התמונה לקידוד Base64 JPEG כדי לייעל את תעבורת הרשת.
- * 3. הרכבת בקשת JSON מובנית הכוללת הנחיה פדגוגית (Prompt) ואת המידע הוויזואלי.
- * 4. ביצוע קריאת HTTP POST אסינכרונית בעזרת ספריית OkHttpClient.
- * 5. פענוח תשובת ה-JSON המוחזרת מהמודל והמרתה לאובייקט StudySet המכיל כרטיסיות לימוד.
+ * שולחת תמונה של דף ל-Gemini ומקבלת בחזרה ערכת כרטיסיות (שאלות ותשובות).
+ * הבקשה נשלחת ב-Thread נפרד, כי אסור לגשת לאינטרנט מה-Thread הראשי של המסך.
  */
 public class GeminiStudyService {
 
-    // תגית לרישום לוגים במערכת לצורכי ניפוי שגיאות (Debug)
-    private static final String TAG = "GeminiStudyService";
-
-    // שם המודל המהיר והרב-מודאלי שבו אנו משתמשים לחילוץ טקסט מתמונות
-    private static final String GEMINI_MODEL = "gemini-2.5-flash";
-
-    // כתובת הבסיס לקריאת ה-REST API של שירותי Google AI
-    private static final String BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/" + GEMINI_MODEL + ":generateContent?key=";
-
-    /**
-     * ממשק Callback להחזרת תוצאות הפענוח למסך הקורא (ScannerActivity)
-     */
+    // ממשק שבעזרתו מחזירים את התוצאה למסך
     public interface AiStudyCallback {
-        // מופעל בהצלחה בעת סיום פענוח הערכה
         void onSuccess(StudySet studySet);
-        // מופעל במקרה של שגיאת רשת, שגיאת מפתח או פענוח
-        void onError(String errorMessage);
+        void onError(String message);
     }
 
-    // לקוח HTTP מוגדר עם זמני המתנה (Timeouts) מתאימים להעלאת תמונות ועיבוד ענן
-    private static final OkHttpClient httpClient = new OkHttpClient.Builder()
-            .connectTimeout(45, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS)
-            .writeTimeout(60, TimeUnit.SECONDS)
-            .build();
+    private static final String PROMPT =
+            "התבונן בתמונה (דף סיכום, ספר או מחברת) וצור ממנה כרטיסיות לימוד בעברית.\n" +
+            "החזר רק JSON במבנה הזה, בלי שום טקסט נוסף:\n" +
+            "{\"title\": \"כותרת קצרה לנושא\", \"category\": \"מקצוע הלימוד\", " +
+            "\"flashcards\": [{\"question\": \"שאלה\", \"answer\": \"תשובה\", \"topic\": \"תת נושא\"}]}\n" +
+            "צור בין 3 ל-10 כרטיסיות לפי כמות החומר בתמונה.";
 
-    // Handler להחזרת תוצאות ה-Callback ישירות אל ה-UI Thread הראשי של אנדרואיד
-    private static final Handler mainHandler = new Handler(Looper.getMainLooper());
+    public static void generateFlashcards(Activity activity, Bitmap bitmap, AiStudyCallback callback) {
+        new Thread(() -> {
+            try {
+                // 1. הקטנת התמונה והמרה לטקסט Base64
+                String imageBase64 = bitmapToBase64(scaleBitmap(bitmap, 1280));
 
-    /**
-     * הפונקציה המרכזית: מקבלת Bitmap של מסמך ושולחת אותו לניתוח בענן.
-     * @param context הקשר המערכת לקריאת הגדרות ומפתח ה-API.
-     * @param bitmap תמונת המסמך או המחברת שנלכדה במצלמה.
-     * @param callback ממשק המאזין לקבלת התוצאה.
-     */
-    public static void generateFlashcardsFromBitmap(Context context, Bitmap bitmap, AiStudyCallback callback) {
-        // שלב 1: שליפת מפתח ה-API מהקונפיגורציה
-        String apiKey = GeminiConfig.getApiKey(context);
+                // 2. בניית הבקשה ושליחה ל-Gemini
+                String requestBody = buildRequest(imageBase64).toString();
+                String url = "https://generativelanguage.googleapis.com/v1beta/models/"
+                        + GeminiConfig.MODEL + ":generateContent?key=" + GeminiConfig.API_KEY;
+                String response = sendPost(url, requestBody);
 
-        if (apiKey == null || apiKey.trim().isEmpty()) {
-            mainHandler.post(() -> callback.onError("NO_KEY"));
-            return;
-        }
-
-        // שלב 2: הקטנת ממדי התמונה (עד 1280 פיקסלים) כדי לחסוך ברוחב פס תוך שמירה על קריאות מלאה של הטקסט
-        Bitmap scaledBitmap = scaleBitmapIfNeeded(bitmap, 1280);
-
-        // שלב 3: המרת התמונה למחרוזת Base64 בפורמט JPEG
-        String base64Jpeg = bitmapToBase64Jpeg(scaledBitmap);
-
-        try {
-            // שלב 4: בניית גוף הבקשה בפורמט JSON לפי המפרט הרשמי של Gemini API
-            JSONObject requestJson = new JSONObject();
-
-            JSONArray contents = new JSONArray();
-            JSONObject contentObj = new JSONObject();
-            JSONArray parts = new JSONArray();
-
-            // חלק 1 בבקשה: הנחיה פדגוגית מפורטת למודל (Prompt) המגדירה את הפורמט הנדרש
-            JSONObject textPart = new JSONObject();
-            textPart.put("text",
-                    "אתה מורה פרטי מומחה ופדגוג מקצועי. התבונן היטב בתמונה המצורפת (דף סיכום, ספר, מחברת, מצגת או צילום לוח).\n" +
-                    "קרא את כל הטקסט, ההגדרות, המושגים והנוסחאות שבתמונה.\n" +
-                    "צור ערכת כרטיסיות זיכרון (Flashcards) איכותיות בעברית בהירה ומדויקת על בסיס התוכן המדויק של התמונה.\n" +
-                    "החזר אך ורק מבנה JSON תקין לפי הסכמה הבאה, ללא שום טקסט נוסף לפני או אחרי:\n" +
-                    "{\n" +
-                    "  \"title\": \"כותרת קצרה וקולעת לנושא הלימוד שבתמונה\",\n" +
-                    "  \"category\": \"מקצוע הלימוד (לדוגמה: היסטוריה, אזרחות, פיזיקה, ביולוגיה, ספרות, מתמטיקה, אנגלית, מדעי המחשב)\",\n" +
-                    "  \"description\": \"תיאור קצר של תוכן הערכה שנלמד מהתמונה\",\n" +
-                    "  \"flashcards\": [\n" +
-                    "    {\n" +
-                    "      \"question\": \"שאלה ישירה וממוקדת\",\n" +
-                    "      \"answer\": \"תשובה מלאה, מדויקת ומלמדת\",\n" +
-                    "      \"topic\": \"תת נושא\"\n" +
-                    "    }\n" +
-                    "  ]\n" +
-                    "}\n" +
-                    "חלץ בין 3 ל-10 כרטיסיות ממוקדות בהתאם לכמות החומר שבתמונה.");
-            parts.put(textPart);
-
-            // חלק 2 בבקשה: נתוני התמונה המקודדים (Inline Data)
-            JSONObject imagePart = new JSONObject();
-            JSONObject inlineData = new JSONObject();
-            inlineData.put("mime_type", "image/jpeg");
-            inlineData.put("data", base64Jpeg);
-            imagePart.put("inline_data", inlineData);
-            parts.put(imagePart);
-
-            contentObj.put("parts", parts);
-            contents.put(contentObj);
-            requestJson.put("contents", contents);
-
-            // הגדרות יצירה (Generation Config) - אכיפת פלט בפורמט JSON בלבד וטמפרטורה נמוכה לתשובות מדויקות
-            JSONObject generationConfig = new JSONObject();
-            generationConfig.put("response_mime_type", "application/json");
-            generationConfig.put("temperature", 0.2);
-            requestJson.put("generationConfig", generationConfig);
-
-            // בניית כתובת ה-URL המלאה עם המפתח
-            String url = BASE_URL + apiKey;
-            RequestBody body = RequestBody.create(
-                    requestJson.toString(),
-                    MediaType.parse("application/json; charset=utf-8")
-            );
-
-            Request request = new Request.Builder()
-                    .url(url)
-                    .post(body)
-                    .build();
-
-            // שלב 5: ביצוע הקריאה האסינכרונית ברקע
-            httpClient.newCall(request).enqueue(new Callback() {
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    // טיפול בשגיאת רשת (למשל אינטרנט מנותק)
-                    Log.e(TAG, "Network call failed: " + e.getMessage());
-                    mainHandler.post(() -> callback.onError("שגיאת תקשורת עם המערכת. יש לוודא חיבור לאינטרנט."));
-                }
-
-                @Override
-                public void onResponse(Call call, Response response) throws IOException {
-                    // בדיקת קוד התגובה של השרת
-                    if (!response.isSuccessful()) {
-                        String errBody = response.body() != null ? response.body().string() : "";
-                        Log.e(TAG, "API error (" + response.code() + "): " + errBody);
-                        String userMsg;
-                        if (response.code() == 429) {
-                            userMsg = "עומס זמני על המערכת. נסה שוב בעוד מספר רגעים.";
-                        } else {
-                            userMsg = "אירעה שגיאה בעיבוד המסמך במערכת (" + response.code() + "). נסה שוב.";
-                        }
-                        mainHandler.post(() -> callback.onError(userMsg));
-                        return;
-                    }
-
-                    try {
-                        // שלב 6: חילוץ התשובה הטקסטואלית מגוף ה-JSON המוחזר
-                        String respString = response.body().string();
-                        JSONObject respJson = new JSONObject(respString);
-                        JSONArray candidates = respJson.optJSONArray("candidates");
-                        if (candidates == null || candidates.length() == 0) {
-                            mainHandler.post(() -> callback.onError("המערכת לא הצליחה לקרוא מידע מתמונה זו. נסה לצלם ברור יותר."));
-                            return;
-                        }
-
-                        JSONObject content = candidates.getJSONObject(0).optJSONObject("content");
-                        JSONArray respParts = content != null ? content.optJSONArray("parts") : null;
-                        if (respParts == null || respParts.length() == 0) {
-                            mainHandler.post(() -> callback.onError("המערכת לא מצאה כרטיסיות לימוד בתמונה."));
-                            return;
-                        }
-
-                        String jsonText = respParts.getJSONObject(0).optString("text", "");
-                        
-                        // שלב 7: פענוח מחרוזת ה-JSON לערכת לימוד מוכנה
-                        StudySet studySet = parseStudySetFromJson(jsonText);
-                        mainHandler.post(() -> callback.onSuccess(studySet));
-
-                    } catch (Exception ex) {
-                        Log.e(TAG, "Failed to parse response: " + ex.getMessage(), ex);
-                        mainHandler.post(() -> callback.onError("שגיאה בפענוח נתוני המערכת. נסה שוב."));
-                    }
-                }
-            });
-
-        } catch (Exception e) {
-            Log.e(TAG, "Error preparing request: " + e.getMessage(), e);
-            mainHandler.post(() -> callback.onError("שגיאה בהכנת הבקשה: " + e.getMessage()));
-        }
-    }
-
-    /**
-     * מפענחת את מחרוזת ה-JSON שהתקבלה מהמודל ובונה ממנה אובייקט מסוג StudySet.
-     * @param jsonString טקסט התשובה הגולמי.
-     * @return אובייקט StudySet מאוכלס בכרטיסיות.
-     */
-    private static StudySet parseStudySetFromJson(String jsonString) throws Exception {
-        // ניקוי תגיות Markdown (במידה והמודל עטף את הפלט ב-```json)
-        String clean = jsonString.trim();
-        if (clean.startsWith("```json")) {
-            clean = clean.substring(7);
-        }
-        if (clean.startsWith("```")) {
-            clean = clean.substring(3);
-        }
-        if (clean.endsWith("```")) {
-            clean = clean.substring(0, clean.length() - 3);
-        }
-        clean = clean.trim();
-
-        JSONObject obj = new JSONObject(clean);
-        String title = obj.optString("title", "ערכת לימוד חדשה");
-        String category = obj.optString("category", "כללי");
-        String description = obj.optString("description", "נוצר מסריקה חכמה במערכת");
-        if (description.length() > 50) {
-            description = description.substring(0, 47) + "...";
-        }
-
-        JSONArray flashcardsArr = obj.optJSONArray("flashcards");
-        int count = flashcardsArr != null ? flashcardsArr.length() : 0;
-        
-        // יצירת מזהה ייחודי עבור ערכת הלימוד החדשה
-        String setId = "set_" + System.currentTimeMillis();
-
-        StudySet set = new StudySet(setId, title, category, description + " • " + count + " כרטיסיות", 0);
-
-        // מעבר על מערך הכרטיסיות והוספתן לערכה
-        if (flashcardsArr != null) {
-            for (int i = 0; i < flashcardsArr.length(); i++) {
-                JSONObject fcObj = flashcardsArr.getJSONObject(i);
-                String q = fcObj.optString("question", "").trim();
-                String a = fcObj.optString("answer", "").trim();
-                String topic = fcObj.optString("topic", category).trim();
-                if (!q.isEmpty() && !a.isEmpty()) {
-                    set.addFlashcard(new Flashcard("fc_" + setId + "_" + (i + 1), q, a, topic));
-                }
+                // 3. פענוח התשובה לערכת לימוד
+                StudySet set = parseResponse(response);
+                activity.runOnUiThread(() -> callback.onSuccess(set));
+            } catch (Exception e) {
+                activity.runOnUiThread(() -> callback.onError(
+                        "לא הצלחנו ליצור כרטיסיות מהתמונה. בדוק את החיבור לאינטרנט ונסה שוב."));
             }
+        }).start();
+    }
+
+    // בניית ה-JSON של הבקשה: טקסט ההנחיה + התמונה
+    private static JSONObject buildRequest(String imageBase64) throws Exception {
+        JSONObject textPart = new JSONObject();
+        textPart.put("text", PROMPT);
+
+        JSONObject inlineData = new JSONObject();
+        inlineData.put("mime_type", "image/jpeg");
+        inlineData.put("data", imageBase64);
+        JSONObject imagePart = new JSONObject();
+        imagePart.put("inline_data", inlineData);
+
+        JSONArray parts = new JSONArray();
+        parts.put(textPart);
+        parts.put(imagePart);
+
+        JSONObject content = new JSONObject();
+        content.put("parts", parts);
+        JSONArray contents = new JSONArray();
+        contents.put(content);
+
+        // מבקשים מהמודל להחזיר JSON בלבד
+        JSONObject config = new JSONObject();
+        config.put("response_mime_type", "application/json");
+
+        JSONObject request = new JSONObject();
+        request.put("contents", contents);
+        request.put("generationConfig", config);
+        return request;
+    }
+
+    // שליחת בקשת POST וקריאת התשובה מהשרת
+    private static String sendPost(String urlString, String body) throws Exception {
+        HttpURLConnection connection = (HttpURLConnection) new URL(urlString).openConnection();
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+        connection.setDoOutput(true);
+        connection.setConnectTimeout(30000);
+        connection.setReadTimeout(90000);
+
+        OutputStream out = connection.getOutputStream();
+        out.write(body.getBytes(StandardCharsets.UTF_8));
+        out.close();
+
+        if (connection.getResponseCode() != 200) {
+            throw new Exception("Server error: " + connection.getResponseCode());
         }
 
-        // גיבוי למקרה שהערכה נוצרה ללא כרטיסיות
+        BufferedReader reader = new BufferedReader(
+                new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
+        StringBuilder result = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            result.append(line);
+        }
+        reader.close();
+        connection.disconnect();
+        return result.toString();
+    }
+
+    // התשובה של Gemini נמצאת ב: candidates[0].content.parts[0].text
+    private static StudySet parseResponse(String response) throws Exception {
+        String text = new JSONObject(response)
+                .getJSONArray("candidates").getJSONObject(0)
+                .getJSONObject("content")
+                .getJSONArray("parts").getJSONObject(0)
+                .getString("text");
+
+        JSONObject data = new JSONObject(text);
+        String title = data.optString("title", "ערכת לימוד חדשה");
+        String category = data.optString("category", "כללי");
+        JSONArray cards = data.getJSONArray("flashcards");
+
+        String setId = "set_" + System.currentTimeMillis();
+        StudySet set = new StudySet(setId, title, category, "נוצר מסריקה", 0);
+        for (int i = 0; i < cards.length(); i++) {
+            JSONObject card = cards.getJSONObject(i);
+            set.addFlashcard(new Flashcard(
+                    setId + "_" + i,
+                    card.getString("question"),
+                    card.getString("answer"),
+                    card.optString("topic", category)));
+        }
         if (set.getFlashcards().isEmpty()) {
-            set.addFlashcard(new Flashcard("fc_default_1", "מהו הרעיון המרכזי שנלמד במסמך זה?", "המסמך מציג מושגי יסוד ועיקרי החומר כפי שנסרקו.", category));
+            throw new Exception("No flashcards in response");
         }
-
         return set;
     }
 
-    /**
-     * פונקציית עזר לשינוי גודל תמונה (Scaling) תוך שמירה מדויקת על יחס הגובה-רוחב (Aspect Ratio).
-     * מטרתה למנוע שליחת קבצים ענקיים לרשת ולמנוע בעיות זיכרון (OutOfMemoryError).
-     * @param original התמונה המקורית.
-     * @param maxDimension הגודל המקסימלי בפיקסלים לצלע הארוכה ביותר.
-     * @return תמונה מוקטנת וחדה.
-     */
-    private static Bitmap scaleBitmapIfNeeded(Bitmap original, int maxDimension) {
-        int width = original.getWidth();
-        int height = original.getHeight();
-
-        if (width <= maxDimension && height <= maxDimension) {
-            return original;
+    // הקטנת התמונה כך שהצלע הארוכה תהיה לכל היותר maxSize פיקסלים
+    private static Bitmap scaleBitmap(Bitmap bitmap, int maxSize) {
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        if (width <= maxSize && height <= maxSize) {
+            return bitmap;
         }
-
-        float ratio = (float) width / (float) height;
-        int newWidth, newHeight;
-        if (width > height) {
-            newWidth = maxDimension;
-            newHeight = Math.round(maxDimension / ratio);
-        } else {
-            newHeight = maxDimension;
-            newWidth = Math.round(maxDimension * ratio);
-        }
-
-        return Bitmap.createScaledBitmap(original, newWidth, newHeight, true);
+        float scale = (float) maxSize / Math.max(width, height);
+        return Bitmap.createScaledBitmap(bitmap, Math.round(width * scale), Math.round(height * scale), true);
     }
 
-    /**
-     * ממירה Bitmap של תמונה למחרוזת בינארית בקידוד Base64 עם דחיסת JPEG.
-     * @param bitmap התמונה לדחיסה והמרה.
-     * @return מחרוזת Base64 המוכנה להטמעה ב-JSON.
-     */
-    private static String bitmapToBase64Jpeg(Bitmap bitmap) {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream);
-        byte[] byteArray = outputStream.toByteArray();
-        return Base64.encodeToString(byteArray, Base64.NO_WRAP);
+    // המרת התמונה ל-JPEG ואז לטקסט Base64 (כך שולחים תמונה בתוך JSON)
+    private static String bitmapToBase64(Bitmap bitmap) {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 85, stream);
+        return Base64.encodeToString(stream.toByteArray(), Base64.NO_WRAP);
     }
 }
-
